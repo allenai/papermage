@@ -1,0 +1,91 @@
+[project]
+name = 'papermage'
+version = '0.0.1'
+description = 'Papermage. Casting magic over scientific PDFs.'
+authors = [
+    {name = 'Allen Institute for Artificial Intelligence', email = 'kylel@allenai.org'},
+]
+license = {text = 'Apache-2.0'}
+readme = 'README.md'
+requires-python = '>=3.8'
+dependencies = [
+        'tqdm',
+        'pdf2image',
+        'pdfplumber>0.7.1',
+        'requests',
+        'numpy>=1.23.2',
+        'scipy>=1.9.0',
+        'pandas>=1.4.3',
+        'ncls',
+        'necessary>=0.3.2',
+        'unidecode>=1.3.4'
+]
+
+[project.urls]
+'Homepage' = 'https://www.github.com/allenai/papermage'
+'Repository' = 'https://www.github.com/allenai/papermage'
+'Bug Tracker' = 'https://www.github.com/allenai/papermage/issues'
+
+[tool.setuptools]
+# ...
+# By default, include-package-data is true in pyproject.toml, so you do
+# NOT have to specify this line.
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ['.',]
+
+[tool.setuptools.package-data]
+papermage = [
+    '../requirements.txt',
+]
+
+[build-system]
+build-backend = 'setuptools.build_meta'
+requires = [
+    'setuptools >= 61.0.0',
+    'pip >= 21.0.0',
+    'wheel'
+]
+
+[project.optional-dependencies]
+dev = [
+    'pytest',
+    'pytest-xdist',
+    'pytest-cov',
+]
+predictors = [
+    'thefuzz[speedup]',
+    'scikit-learn==1.1.2',
+    'xgboost==1.6.2',
+    'spacy==3.3.1',
+    'pysbd==0.3.4',
+    'tokenizers==0.13.1',
+    'torch==1.12.1',
+    'torchvision==0.13.1',
+    'layoutparser==0.3.4',
+    'transformers==0.13.1',
+    'smashed==0.1.10',
+    'optimum[onnxruntime]==1.4.0'
+]
+
+[tool.pytest.ini_options]
+addopts = '-n auto --cov=.'
+testpaths = ['tests/']
+pythonpath = [
+  '.', 'src',
+]
+python_classes = ['Test*', '*Test']
+log_format = '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
+log_level = 'DEBUG'
+markers = []
+filterwarnings = []
+
+[tool.coverage.run]
+omit = [
+    '*__init__*',
+    '*Test*',
+    'tests/fixtures/*',
+]
+[tool.coverage.report]
+fail_under = 57
