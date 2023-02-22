@@ -38,20 +38,17 @@ class Span:
         This function reorganizes input spans into their own List if they're adjacent.
         """
 
-
     @classmethod
-    def small_spans_to_big_span(cls, spans: List['Span']) -> 'Span':
+    def create_enclosing_span(cls, spans: List['Span']) -> 'Span':
+        """Create the narrowest Span that completely encloses all the input Spans."""
         # TODO: add warning for unsorted spans or not-contiguous spans
-        # TODO: what happens when Boxes cant be merged?
-        start = None
-        end = None
-        for span in spans:
+        if not spans:
+            raise ValueError(f'`spans` should be non-empty.')
+        start = spans[0].start
+        end = spans[0].end
+        for span in spans[1:]:
             if span.start < start:
                 start = span.start
             if span.end > end:
                 end = span.end
-        return Span(
-            start=start,
-            end=end,
-            box=Box.small_boxes_to_big_box(boxes=[span.box for span in spans])
-        )
+        return Span(start=start, end=end)
