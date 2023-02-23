@@ -8,15 +8,14 @@ represents the word 'This' in the string 'This is a document.'
 """
 
 from typing import List, Optional, Dict, Tuple, List
-from dataclasses import dataclass
 
 from collections import defaultdict
 
 
-@dataclass
 class Span:
-    start: int
-    end: int
+    def __init__(self, start: int, end: int):
+        self.start = start
+        self.end = end
 
     def to_json(self) -> List[int]:
         """Returns whatever representation is JSON compatible"""
@@ -27,12 +26,24 @@ class Span:
         """Recreates the object from the JSON serialization"""
         return Span(start=span_json[0], end=span_json[-1])
 
+    def __repr__(self):
+        return f'Span{self.to_json()}'
+
+    def __eq__(self, other):
+        return self.start == other.start and self.end == other.end
+
     def __lt__(self, other: 'Span'):
         """Useful for sort(). Orders according to the start index.
         If ties, then order according to the end index."""
         if self.start == other.start:
             return self.end < other.end
         return self.start < other.start
+
+    def is_overlap(self, other: 'Span') -> bool:
+        """Whether self overlaps with the other Span object."""
+        return self.start <= other.start < self.end or \
+               other.start <= self.start < other.end or \
+               self == other
 
     @classmethod
     def create_enclosing_span(cls, spans: List['Span']) -> 'Span':
