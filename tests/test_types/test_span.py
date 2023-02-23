@@ -5,7 +5,6 @@
 
 """
 
-from typing import List
 
 import unittest
 from papermage.types import Span
@@ -13,6 +12,7 @@ from papermage.types.span import MergeClusterSpans
 
 
 class TestSpan(unittest.TestCase):
+
     def test_to_from_json(self):
         span = Span(start=0, end=0)
         self.assertEqual(span.to_json(), [0, 0])
@@ -32,12 +32,21 @@ class TestSpan(unittest.TestCase):
         c = Span(3, 4)
         self.assertListEqual(sorted([c, b, a]), [a, b, c])
 
+    def test_overlap(self):
+        self.assertTrue(Span(0, 0).is_overlap(other=Span(0, 0)))
+        self.assertTrue(Span(0, 0).is_overlap(other=Span(0, 1)))
+        self.assertTrue(Span(0, 1).is_overlap(other=Span(0, 0)))
+        self.assertTrue(Span(0, 3).is_overlap(other=Span(1, 2)))
+        self.assertTrue(Span(1, 2).is_overlap(other=Span(0, 3)))
+        self.assertFalse(Span(0, 1).is_overlap(other=Span(1, 2)))
+        self.assertFalse(Span(0, 1).is_overlap(other=Span(2, 2)))
+
     def test_equiv(self):
         self.assertTrue(Span(0, 0) == Span(0, 0))
         self.assertFalse(Span(0, 0) == Span(0, 1))
         self.assertFalse(Span(1, 0) == Span(0, 0))
 
-    def test_small_spans_to_big_span(self):
+    def test_create_enclosing_span(self):
         # nonempty
         with self.assertRaises(ValueError):
             Span.create_enclosing_span(spans=[])
