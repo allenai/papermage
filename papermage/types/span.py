@@ -48,14 +48,6 @@ class Span:
                 end = span.end
         return Span(start=start, end=end)
 
-    @classmethod
-    def cluster_adjacent_spans(cls, spans: List['Span']) -> List[List['Span']]:
-        """Cluster adjacent spans like (0,1), (2,3), (4,5).
-        This function reorganizes input spans into their own List if they're adjacent.
-        """
-        if not spans:
-            raise ValueError(f'`spans` should be non-empty.')
-
 
 class MergeClusterSpans:
     """
