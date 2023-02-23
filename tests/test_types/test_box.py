@@ -53,10 +53,10 @@ class TestBox(unittest.TestCase):
     def test_xy_coordinates(self):
         box = Box.from_xy_coordinates(x1=0.2, y1=0.09, x2=0.295, y2=0.107, page=3)
         # allow for some floating point errors
-        self.assertAlmostEquals(box.l, 0.2)
-        self.assertAlmostEquals(box.t, 0.09)
-        self.assertAlmostEquals(box.w, 0.095)
-        self.assertAlmostEquals(box.h, 0.017)
+        self.assertAlmostEqual(box.l, 0.2)
+        self.assertAlmostEqual(box.t, 0.09)
+        self.assertAlmostEqual(box.w, 0.095)
+        self.assertAlmostEqual(box.h, 0.017)
         self.assertEqual(box.page, 3)
         # it's important that the return value of this does *NOT* look like the JSON serialization
         # hence why we make it a tuple & drop the page.
@@ -90,17 +90,17 @@ class TestBox(unittest.TestCase):
             Box.create_enclosing_box(boxes=[])
         # singleton
         box = Box.create_enclosing_box(boxes=[Box(l=0.2, t=0.09, w=0.095, h=0.017, page=3)])
-        self.assertAlmostEquals(box.l, 0.2)
-        self.assertAlmostEquals(box.t, 0.09)
-        self.assertAlmostEquals(box.w, 0.095)
-        self.assertAlmostEquals(box.h, 0.017)
+        self.assertAlmostEqual(box.l, 0.2)
+        self.assertAlmostEqual(box.t, 0.09)
+        self.assertAlmostEqual(box.w, 0.095)
+        self.assertAlmostEqual(box.h, 0.017)
         self.assertEqual(box.page, 3)
         # proper behavior
         box2 = Box(0.15, 0.05, 0.01, 0.01, 3)
         box3 = Box(0.05, 0.12, 0.01, 0.01, 3)
         box_new = Box.create_enclosing_box(boxes=[box, box2, box3])
-        self.assertAlmostEquals(box_new.l, 0.05)
-        self.assertAlmostEquals(box_new.t, 0.05)
-        self.assertAlmostEquals(box_new.w, 0.245)
-        self.assertAlmostEquals(box_new.h, 0.08)
+        self.assertAlmostEqual(box_new.l, 0.05)
+        self.assertAlmostEqual(box_new.t, 0.05)
+        self.assertAlmostEqual(box_new.w, 0.245)
+        self.assertAlmostEqual(box_new.h, 0.08)
         self.assertEqual(box_new.page, 3)
