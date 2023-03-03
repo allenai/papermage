@@ -24,8 +24,6 @@ class Entity(Annotation):
         self.spans = spans if spans else []
         self.boxes = boxes if boxes else []
         self.metadata = metadata if metadata else Metadata()
-        self._id: Optional[int] = None
-        self._doc: Optional['Document'] = None
         super().__init__()
 
     def __repr__(self):
