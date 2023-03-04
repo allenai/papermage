@@ -1,4 +1,5 @@
 # from papermage.types.document import Document
+from papermage.types.image import Image
 from papermage.types.span import Span
 from papermage.types.box import Box
 from papermage.types.metadata import Metadata
@@ -12,6 +13,6 @@ __all__ = [
     'Relation',
     'Span',
     'Box',
-    'PILImage',
+    'Image',
     'Metadata'
 ]
