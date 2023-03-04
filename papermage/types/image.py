@@ -77,15 +77,15 @@ class Image:
         return image
 
     @classmethod
-    def create_rgb_all_white(cls, nrow: int = 600, ncol: int = 800) -> 'Image':
-        im = pilimage_module.new('RGB', (nrow, ncol), (255, 255, 255))
+    def create_rgb_all_white(cls, width: int = 600, height: int = 800) -> 'Image':
+        im = pilimage_module.new('RGB', (width, height), (255, 255, 255))
         image = Image()
         image.pilimage = im
         return image
 
     @classmethod
-    def create_rgb_random(cls, nrow: int = 600, ncol: int = 800) -> 'Image':
-        imarray = np.random.rand(nrow, ncol, 3) * 255
+    def create_rgb_random(cls, width: int = 600, height: int = 800) -> 'Image':
+        imarray = np.random.rand(height, width, 3) * 255
         image = Image.from_array(imarray=imarray)
         return image
 
