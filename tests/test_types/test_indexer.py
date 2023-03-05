@@ -41,4 +41,17 @@ class TestEntitySpanIndexer(unittest.TestCase):
         self.assertEqual(matches, [entities_to_index[0], entities_to_index[1]])
 
     def test_finds_matching_entities_in_original_order(self):
-        pass
+        entities_to_index = [
+            Entity(spans=[Span(100, 105)]),
+            Entity(spans=[Span(9, 10)]),
+            Entity(spans=[Span(0, 5), Span(5, 8)])
+        ]
+
+        index = EntitySpanIndexer(entities_to_index)
+
+        # should intersect 2 and 3 but not 1
+        probe = Entity(spans=[Span(9, 20), Span(1, 7)])
+        matches = index.find(probe)
+
+        self.assertEqual(len(matches), 2)
+        self.assertEqual(matches, [entities_to_index[1], entities_to_index[2]])
