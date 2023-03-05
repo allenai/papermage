@@ -9,12 +9,14 @@ import itertools
 import warnings
 from typing import Dict, Iterable, List, Optional
 
-from mmda.types.annotation import Annotation, BoxGroup
+from papermage.types import Entity, Span, Box, Image, Metadata
+
 from mmda.types.image import PILImage
 from mmda.types.indexers import Indexer, SpanGroupIndexer
-from mmda.types.metadata import Metadata
 from mmda.types.names import ImagesField, MetadataField, SymbolsField
 from mmda.utils.tools import MergeSpans, allocate_overlapping_tokens_for_box
+
+
 
 
 class Document:
