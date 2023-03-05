@@ -6,6 +6,7 @@ Monkey patch the PIL.Image methods to add base64 conversion
 
 """
 
+import os
 import numpy as np
 
 import base64
@@ -13,8 +14,10 @@ from io import BytesIO
 
 import logging
 
-from PIL import Image as pilimage_module  # module
-from PIL.Image import Image as PILImageClass  # class
+from PIL import Image as pilimage_module
+from PIL import ImageChops as pilimagechops_module
+from PIL.Image import Image as PILImageClass
+
 
 
 class Image:
@@ -36,13 +39,17 @@ class Image:
             raise AttributeError(f"This Image already has a PILImage. Make a new Image.")
         self._pilimage = pilimage
 
+    @property
+    def mode(self) -> str:
+        return self.pilimage.mode
+
     def convert_to_greyscale(self) -> 'Image':
         image = Image()
-        image.pilimage = self._pilimage.convert('L')
+        image.pilimage = self.pilimage.convert('L').convert('RGB')
         return image
 
     def to_array(self) -> np.ndarray:
-        return np.array(self._pilimage)
+        return np.array(self.pilimage)
 
     @classmethod
     def from_array(cls, imarray: np.ndarray) -> 'Image':
@@ -89,8 +96,24 @@ class Image:
         image = Image.from_array(imarray=imarray)
         return image
 
-    def save(self):
-        pass
+    def save(self, filepath: str, is_overwrite: bool = False, format: str = None, **params):
+        if os.path.exists(filepath) and not is_overwrite:
+            raise FileExistsError(f'Already image at {filepath}. Try setting `is_overwrite`')
+        self.pilimage.save(filepath, format, **params)
 
-    def show(self):
-        pass
+    @classmethod
+    def open(cls, filepath: str, mode: str = 'r', formats: str = None) -> 'Image':
+        im = pilimage_module.open(filepath, mode, formats)
+        image = Image()
+        image.pilimage = im
+        return image
+
+    def show(self, title: str = None):
+        self.pilimage.show(title)
+
+    def __eq__(self, other: 'Image') -> bool:
+        diff = pilimagechops_module.difference(image1=self.pilimage, image2=other.pilimage)
+        if diff.getbbox():
+            return False
+        else:
+            return True
