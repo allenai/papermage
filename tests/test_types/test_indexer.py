@@ -10,6 +10,9 @@ from papermage.types import Entity, Span, EntitySpanIndexer
 
 
 class TestEntitySpanIndexer(unittest.TestCase):
+    def test_index_empty(self):
+        indexer = EntitySpanIndexer(entities=[])
+
     def test_overlap_within_single_entity_fails_checks(self):
         entities = [Entity(spans=[Span(0, 5), Span(4, 7)])]
 

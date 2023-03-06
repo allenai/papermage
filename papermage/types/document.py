@@ -5,11 +5,9 @@
 
 """
 
-import itertools
-import warnings
 from typing import Dict, Iterable, List, Optional
 
-from papermage.types import Entity, Span, Box, Image, Metadata, EntitySpanIndexer
+from papermage.types import Entity, Metadata, EntitySpanIndexer
 
 SymbolsFieldName = 'symbols'
 ImagesFieldName = 'images'
@@ -49,14 +47,15 @@ class Document:
         for entity in entities:
             entity.doc = self
 
+        setattr(self, field_name, entities)
         self.__entity_span_indexers[field_name] = EntitySpanIndexer(entities=entities)
 
-        setattr(self, field_name, entities)
-        self.__entities.append(field_name)
-
     def remove_entity(self, field_name: str):
+
+        for entity in getattr(self, field_name):
+            entity.doc = None
+
         delattr(self, field_name)
-        self.__entities = [f for f in self.__entities if f != field_name]
         del self.__entity_span_indexers[field_name]
 
     def to_json(self, field_names: Optional[List[str]] = None) -> Dict:
@@ -81,7 +80,8 @@ class Document:
         }
 
         # 2) serialize each field to JSON
-        field_names = self.__entities if field_names is None else field_names
+        field_names = list(self.__entity_span_indexers.keys()) \
+            if field_names is None else field_names
         for field_name in field_names:
             doc_dict[EntitiesFieldName][field_name] = [
                 entity.to_json() for entity in getattr(self, field_name)

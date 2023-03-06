@@ -11,7 +11,6 @@ from typing import List
 from abc import abstractmethod
 
 import numpy as np
-import pandas as pd
 from papermage.types import Entity, Annotation
 from ncls import NCLS
 
@@ -53,13 +52,11 @@ class EntitySpanIndexer(Indexer):
                 ids.append(id)
 
         self._entities = entities
-        # TODO: kylel - is this necessary to convert to Series?
-        # self._index = NCLS(
-        #     pd.Series(starts, dtype=np.int64),
-        #     pd.Series(ends, dtype=np.int64),
-        #     pd.Series(ids, dtype=np.int64)
-        # )
-        self._index = NCLS(starts, ends, ids)
+        self._index = NCLS(
+            np.array(starts, dtype=np.int32),
+            np.array(ends, dtype=np.int32),
+            np.array(ids, dtype=np.int32)
+        )
 
         self._ensure_disjoint()
 
