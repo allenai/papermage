@@ -92,6 +92,7 @@ class EntitySpanIndexer(Indexer):
         matched_entities = [self._entities[matched_id] for matched_id in matched_ids]
         return list(matched_entities)
 
+        # TODO: kylel - is this necessary? seems like already does this (see tests)
         # Retrieval above doesn't preserve document order; sort here
         # TODO: provide option to return matched span groups in same order as self._entities
         #   (the span groups the index was built with originally)
