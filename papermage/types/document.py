@@ -9,11 +9,16 @@ from typing import Dict, Iterable, List, Optional
 
 from papermage.types import Entity, Metadata, EntitySpanIndexer
 
+# document field names
 SymbolsFieldName = 'symbols'
 ImagesFieldName = 'images'
 MetadataFieldName = 'metadata'
 EntitiesFieldName = 'entities'
 RelationsFieldName = 'relations'
+
+PagesFieldName = "pages"
+TokensFieldName = "tokens"
+RowsFieldName = "rows"
 
 
 class Document:

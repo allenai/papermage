@@ -63,6 +63,18 @@ class TestBox(unittest.TestCase):
         # otherwise, it can be confusing if come back to this data at a later date.
         self.assertEqual(box.xy_coordinates, (0.2, 0.09, 0.295, 0.107))
 
+        box = Box.from_xy_coordinates(x1=0.2, y1=0.09, x2=10.295, y2=30.107, page=3, page_width=10, page_height=30)
+        # allow for some floating point errors
+        self.assertAlmostEqual(box.l, 0.2)
+        self.assertAlmostEqual(box.t, 0.09)
+        self.assertAlmostEqual(box.w, 9.8)
+        self.assertAlmostEqual(box.h, 29.91)
+        self.assertEqual(box.page, 3)
+        # it's important that the return value of this does *NOT* look like the JSON serialization
+        # hence why we make it a tuple & drop the page.
+        # otherwise, it can be confusing if come back to this data at a later date.
+        self.assertEqual(box.xy_coordinates, (0.2, 0.09, 10, 30))
+
     def test_relative_absolute(self):
         box = Box(l=0.2, t=0.09, w=0.095, h=0.017, page=3)
         box_abs = box.to_absolute(page_width=100, page_height=300)

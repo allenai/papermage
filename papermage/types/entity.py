@@ -90,3 +90,4 @@ class Entity(Annotation):
     def __iter__(self):
         """By default, iterate over the spans"""
         yield from self.spans
+
