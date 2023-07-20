@@ -50,3 +50,43 @@ class Entity(Annotation):
                    for box_json in entity_json.get('boxes', [])],
             metadata=Metadata.from_json(entity_json.get('metadata', {}))
         )
+
+    @property
+    def start(self) -> Union[int, float]:
+        return (
+            min([span.start for span in self.spans])
+            if len(self.spans) > 0
+            else float("-inf")
+        )
+
+    @property
+    def end(self) -> Union[int, float]:
+        return (
+            max([span.end for span in self.spans])
+            if len(self.spans) > 0
+            else float("inf")
+        )
+
+    @property
+    def symbols(self) -> List[str]:
+        if self.doc is not None:
+            return [
+                self.doc.symbols[span.start: span.end] for span in self.spans
+            ]
+        else:
+            return []
+
+    @property
+    def text(self) -> str:
+        maybe_text = self.metadata.get("text", None)
+        if maybe_text is None:
+            return " ".join(self.symbols)
+        return maybe_text
+
+    @text.setter
+    def text(self, text: Union[str, None]) -> None:
+        self.metadata.text = text
+
+    def __iter__(self):
+        """By default, iterate over the spans"""
+        yield from self.spans
