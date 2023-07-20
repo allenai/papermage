@@ -86,3 +86,8 @@ class Entity(Annotation):
     @text.setter
     def text(self, text: Union[str, None]) -> None:
         self.metadata.text = text
+
+    def __iter__(self):
+        """By default, iterate over the spans"""
+        yield from self.spans
+
