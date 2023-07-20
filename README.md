@@ -6,6 +6,7 @@
 conda create -n papermage python=3.8
 conda activate papermage
 pip install -e '.[dev,predictors]'
+conda install poppler
 ```
 
 ## Unit testing
