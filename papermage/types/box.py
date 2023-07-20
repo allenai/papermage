@@ -6,7 +6,10 @@ Rectangular region on a document.
 
 """
 
-from typing import List, Dict, Tuple, Union
+from typing import List, Dict, Tuple, Union, Optional
+import warnings
+
+import numpy as np
 
 from papermage.types import Span
 
@@ -29,16 +32,33 @@ class Box:
     def from_json(cls, box_json: List[Union[float, int]]) -> "Box":
         """Recreates the object from the JSON serialization"""
         l, t, w, h, page = box_json
-        return Box(l=l, t=t, w=w, h=h, page=page)
+        return Box(l=l, t=t, w=w, h=h, page=int(page))
 
     def __repr__(self):
         return f'Box{self.to_json()}'
 
     @classmethod
-    def from_xy_coordinates(cls, x1: float, y1: float, x2: float, y2: float, page: int):
+    def from_xy_coordinates(cls, x1: float, y1: float, x2: float, y2: float, page: int, page_width: Optional[float] = None, page_height: Optional[float] = None):
+        """Create a Box from the top-left and bottom-right coordinates.
+
+        If the page width and height are provided and coordinates lie outside the page, they are clipped to the
+        page width and height.
+        """
+
         assert x2 >= x1, "Requires x2 >= x1"
         assert y2 >= y1, "Requires y2 >= y1"
-        return Box(l=x1, t=y1, w=x2 - x1, h=y2 - y1, page=page)
+        _x1, _x2, _y1, _y2 = x1, x2, y1, y2
+        if page_width is not None:
+            _x1, _x2 = np.clip([x1, x2], 0, page_width)
+        if page_height is not None:
+            _y1, _y2 = np.clip([y1, y2], 0, page_height)
+
+        if (_x1, _y1, _x2, _y2) != (x1, y1, x2, y2):
+            warnings.warn(
+                f"The coordinates ({x1}, {y1}, {x2}, {y2}) are not valid and converted to ({_x1}, {_y1}, {_x2}, {_y2})."
+            )
+
+        return Box(l=_x1, t=_y1, w=_x2 - _x1, h=_y2 - _y1, page=page)
 
     @property
     def xy_coordinates(self) -> Tuple[float, float, float, float]:

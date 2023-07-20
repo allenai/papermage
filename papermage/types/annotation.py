@@ -25,10 +25,10 @@ class Annotation:
     def __init__(self):
         self._id: Optional[int] = None
         self._doc: Optional['Document'] = None
-        # logging.warning('Unless testing or developing, we dont recommend creating Annotations '
-        #                 'manually. Annotations need to store things like `id` and references '
-        #                 'to a `Document` to be valuable. These are all handled automatically in '
-        #                 '`Parsers` and `Predictors`.')
+        logging.warning('Unless testing or developing, we dont recommend creating Annotations '
+                        'manually. Annotations need to store things like `id` and references '
+                        'to a `Document` to be valuable. These are all handled automatically in '
+                        '`Parsers` and `Predictors`.')
 
     @property
     def doc(self) -> Optional['Document']:
