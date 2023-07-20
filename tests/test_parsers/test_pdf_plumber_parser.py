@@ -19,7 +19,7 @@ class TestPDFPlumberParser(unittest.TestCase):
     def setUp(cls) -> None:
         cls.fixture_path = pathlib.Path(__file__).parent.parent / "fixtures"
 
-    '''
+    
     def test_parse(self):
         parser = PDFPlumberParser()
         doc = parser.parse(input_pdf_path=self.fixture_path / "1903.10676.pdf")
@@ -171,7 +171,7 @@ class TestPDFPlumberParser(unittest.TestCase):
         )
         assert out["symbols"] == "abc\nd ef\ngh i\njkl"
         tokens = [
-            SpanGroup.from_json(span_group_dict=t_dict) for t_dict in out["tokens"]
+            Entity.from_json(entity_json=t_dict) for t_dict in out["entities"]["tokens"]
         ]
         assert [(t.start, t.end) for t in tokens] == [
             (0, 2),
@@ -193,7 +193,7 @@ class TestPDFPlumberParser(unittest.TestCase):
             "j",
             "kl",
         ]
-        rows = [SpanGroup.from_json(span_group_dict=r_dict) for r_dict in out["rows"]]
+        rows = [Entity.from_json(entity_json=r_dict) for r_dict in out["entities"]["rows"]]
         assert [(r.start, r.end) for r in rows] == [(0, 3), (4, 8), (9, 13), (14, 17)]
         assert [out["symbols"][r.start : r.end] for r in rows] == [
             "abc",
@@ -201,13 +201,13 @@ class TestPDFPlumberParser(unittest.TestCase):
             "gh i",
             "jkl",
         ]
-        pages = [SpanGroup.from_json(span_group_dict=p_dict) for p_dict in out["pages"]]
+        pages = [Entity.from_json(entity_json=p_dict) for p_dict in out["entities"]["pages"]]
         assert [(p.start, p.end) for p in pages] == [(0, 8), (9, 17)]
         assert [out["symbols"][p.start : p.end] for p in pages] == [
             "abc\nd ef",
             "gh i\njkl",
         ]
-    '''
+    
 
     def test_parser_stability(self):
         """

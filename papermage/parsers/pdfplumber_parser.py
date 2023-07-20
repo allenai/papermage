@@ -299,7 +299,6 @@ class PDFPlumberParser(Parser):
                 boxes=[token_dict["bbox"]],
                 metadata=token_metadata,
             )
-            # token.id = token_id  # setting id is removed from constructor
             token_annos.append(token)
 
             # 3) increment whitespace based on Row & Word membership. and build Rows.
@@ -320,7 +319,6 @@ class PDFPlumberParser(Parser):
             spans=[Span(start=start, end=end)],
             boxes=[token_dicts[-1]["bbox"]],
         )
-        # token.id = len(token_dicts) - 1  # setting id is removed from constructor
         token_annos.append(token)
 
         # 2) build rows
@@ -343,7 +341,6 @@ class PDFPlumberParser(Parser):
                 boxes=[Box.create_enclosing_box(boxes=[box for t in row_tokens for box in t.boxes])],
                 
             )
-            # row.id = row_id
             row_annos.append(row)
 
         # 3) build pages
@@ -364,7 +361,6 @@ class PDFPlumberParser(Parser):
                 boxes=[Box.create_enclosing_box(boxes=[box for t in page_tokens for box in t.boxes])],
                 metadata=Metadata(width=page_w, height=page_h, user_unit=page_unit),
             )
-            # page.id = page_id
             page_annos.append(page)
 
         return {
