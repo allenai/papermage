@@ -53,6 +53,7 @@ dev = [
     'pytest',
     'pytest-xdist',
     'pytest-cov',
+    'mypy>=0.971'
 ]
 predictors = [
     'thefuzz[speedup]',
@@ -64,7 +65,7 @@ predictors = [
     'torch==1.12.1',
     'torchvision==0.13.1',
     'layoutparser==0.3.4',
-    'transformers==0.13.1',
+    'transformers',
     'smashed==0.1.10',
     'optimum[onnxruntime]==1.4.0'
 ]
@@ -86,6 +87,7 @@ omit = [
     '*__init__*',
     '*Test*',
     'tests/fixtures/*',
+    'tests/*',
 ]
 [tool.coverage.report]
 fail_under = 25
