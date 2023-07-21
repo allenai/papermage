@@ -6,8 +6,8 @@ Rectangular region on a document.
 
 """
 
+import logging
 from typing import List, Dict, Tuple, Union, Optional
-import warnings
 
 import numpy as np
 
@@ -54,7 +54,7 @@ class Box:
             _y1, _y2 = np.clip([y1, y2], 0, page_height)
 
         if (_x1, _y1, _x2, _y2) != (x1, y1, x2, y2):
-            warnings.warn(
+            logging.warn(
                 f"The coordinates ({x1}, {y1}, {x2}, {y2}) are not valid and converted to ({_x1}, {_y1}, {_x2}, {_y2})."
             )
 
