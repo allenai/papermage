@@ -7,7 +7,7 @@ Rectangular region on a document.
 """
 
 import logging
-from typing import List, Dict, Tuple, Union, Optional
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -115,7 +115,7 @@ class Box:
     def create_enclosing_box(cls, boxes: List['Box']) -> 'Box':
         """Create the narrowest Box that completely encloses all the input Boxes."""
         if not boxes:
-            raise ValueError(f'`spans` should be non-empty.')
+            raise ValueError(f'`boxes` should be non-empty.')
         unique_pages = {box.page for box in boxes}
         if len(unique_pages) != 1:
             raise ValueError(f"Boxes not all on same page. Pages={unique_pages}")

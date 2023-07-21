@@ -47,6 +47,10 @@ email = "blnewman@stanford.edu"
 name = "Russell Authur"
 email = "russell.authur@gmail.com"
 
+[[project.authors]]
+name = "Chris Wilhelm"
+email = "chrisw@allenai.org"
+
 
 [project.urls]
 'Homepage' = 'https://www.github.com/allenai/papermage'
