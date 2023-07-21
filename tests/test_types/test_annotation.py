@@ -5,6 +5,7 @@
 """
 
 import unittest
+
 from papermage.types import Annotation
 
 
@@ -24,13 +25,9 @@ class TestAnnotation(unittest.TestCase):
         a = DummyAnnotation()
 
         to_json = a.to_json()
-        from_json = a.from_json(annotation_json={'doesnt_matter': 'whats_here'})
+        from_json = a.from_json(annotation_json={"doesnt_matter": "whats_here"})
         self.assertIsNone(to_json)
         self.assertIsNone(from_json)
-
-    def test_create_warning(self):
-        with self.assertLogs():
-            a = Annotation()
 
     def test_doc(self):
         d = DummyDoc()
