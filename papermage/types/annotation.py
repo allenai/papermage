@@ -22,7 +22,7 @@ class Annotation:
     """Represent a "unit" (e.g. highlighted span, drawn boxes) layered on a Document."""
 
     @abstractmethod
-    def __init__(self):
+    def __init__(self) -> None:
         self._id: Optional[int] = None
         self._doc: Optional['Document'] = None
         logging.warning('Unless testing or developing, we dont recommend creating Annotations '
