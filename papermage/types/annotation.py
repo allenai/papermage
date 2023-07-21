@@ -13,7 +13,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 if TYPE_CHECKING:
-    # from mmda.types.document import Document
+    # from papermage.types.document import Document
     pass
 
 
@@ -64,3 +64,13 @@ class Annotation:
     @abstractmethod
     def from_json(cls, annotation_json: Union[Dict, List]) -> "Annotation":
         pass
+    
+    def __getattr__(self, field: str) -> List["Annotation"]:
+        """This method allows you to access overlapping Annotations within the Document"""
+        if self.doc is None:
+            raise ValueError("This annotation is not attached to a document")
+
+        if field in self.doc.fields:
+            return self.doc.find_span_overlap_entities(self, field)
+
+        return self.__getattribute__(field)

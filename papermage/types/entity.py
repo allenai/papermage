@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Union
 from papermage.types import Span, Box, Metadata, Annotation
 
 if TYPE_CHECKING:
-    from mmda.types.document import Document
+    from papermage.types.document import Document
 
 
 class Entity(Annotation):
