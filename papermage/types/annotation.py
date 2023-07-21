@@ -9,9 +9,8 @@ Document object directly from within the Entity itself.
 """
 
 import logging
-
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Dict, List, Union, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 if TYPE_CHECKING:
     # from mmda.types.document import Document
@@ -24,24 +23,22 @@ class Annotation:
     @abstractmethod
     def __init__(self) -> None:
         self._id: Optional[int] = None
-        self._doc: Optional['Document'] = None
-        logging.warning('Unless testing or developing, we dont recommend creating Annotations '
-                        'manually. Annotations need to store things like `id` and references '
-                        'to a `Document` to be valuable. These are all handled automatically in '
-                        '`Parsers` and `Predictors`.')
+        self._doc: Optional["Document"] = None
 
     @property
-    def doc(self) -> Optional['Document']:
+    def doc(self) -> Optional["Document"]:
         return self._doc
 
     @doc.setter
-    def doc(self, doc: 'Document') -> None:
+    def doc(self, doc: "Document") -> None:
         """This method attaches a Document to this Annotation, allowing the Annotation
         to access things beyond itself within the Document (e.g. neighboring annotations)"""
         if self.doc:
-            raise AttributeError("Already has an attached Document. Since Annotations should be"
-                                 "specific to a given Document, we recommend creating a new"
-                                 "Annotation from scratch and then attaching your Document.")
+            raise AttributeError(
+                "Already has an attached Document. Since Annotations should be"
+                "specific to a given Document, we recommend creating a new"
+                "Annotation from scratch and then attaching your Document."
+            )
         self._doc = doc
 
     @property
@@ -56,7 +53,7 @@ class Annotation:
         if self.id:
             raise AttributeError(f"This Annotation already has an ID: {self.id}")
         if not self.doc:
-            raise AttributeError('This Annotation is missing a Document')
+            raise AttributeError("This Annotation is missing a Document")
         self._id = id
 
     @abstractmethod
