@@ -98,7 +98,8 @@ predictors = [
     'layoutparser==0.3.4',
     'transformers',
     'smashed==0.1.10',
-    'optimum[onnxruntime]==1.4.0'
+    'optimum[onnxruntime]==1.4.0',
+    'pytorch-lightning==2.0.5',
 ]
 
 [tool.pytest.ini_options]
