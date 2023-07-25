@@ -1,14 +1,19 @@
 """
 benjaminn
 """
+import dataclasses
+import inspect
 import json
+from argparse import ArgumentParser
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Union, Literal
 
 import pytorch_lightning as pl
+import springs
+import torch
+from omegaconf import DictConfig
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.utilities.types import STEP_OUTPUT
-import torch
 from torch.utils.data import DataLoader
 
 from papermage.types import Document, Entity, Span, Box
@@ -18,19 +23,19 @@ class EntityClassificationPredictorWrapper(pl.LightningModule):
     def __init__(self, predictor: EntityClassificationPredictor):
         super().__init__()
         self.predictor = predictor
-    
+
     def training_step(self, batch, batch_idx) -> Optional[STEP_OUTPUT]:
         pytorch_output = self.predictor.model(**batch)
         scores_tensor = torch.softmax(pytorch_output.logits, dim=2)
         return pytorch_output.loss
-    
+
     def configure_optimizers(self):
         return torch.optim.Adam(self.predictor.model.parameters(), lr=self.predictor.learning_rate)
-    
+
     def preprocess(self, doc: Document) -> List:
         # is this the default context we should use?
         return self.predictor.preprocess(doc, "pages")
-    
+
     def __getattr__(self, name):
         """Allow access to the predictor's attributes if the wrapper doesn't have them."""
         if name not in self.__dict__:
@@ -47,12 +52,12 @@ class HFCheckpoint(pl.Callback):
 
         super().__init__()
         self.save_dir = save_dir
-    
+
     def on_save_checkpoint(self, trainer, pl_module, checkpoint):
         # save the model in hf format for easy loading
         pl_module.predictor.model.save_pretrained(self.save_dir)
         pl_module.predictor.tokenizer.save_pretrained(self.save_dir)
-        
+
         # don't want to save the state twice bc it might be big. But not saving it might cause issues if we want
         # to load the model later, that's a TODO for now.
         # del checkpoint["state_dict"]
@@ -61,35 +66,44 @@ class HFCheckpoint(pl.Callback):
 class EntityClassificationPredictorTrainer:
 
     CACHE_PATH = Path(Path.home() / ".cache/papermage")
-    
-    def __init__(self, predictor: EntityClassificationPredictor, **kwargs):
+
+    def __init__(self, predictor: EntityClassificationPredictor, config: DictConfig):
         if not self.CACHE_PATH.exists():
             self.CACHE_PATH.mkdir(parents=True)
 
         self.predictor = EntityClassificationPredictorWrapper(predictor)
-        
+        self.config = config
+
         self.model_id = "_".join([
             str(self.predictor.config.name_or_path).replace("/", "-"),
+            str(self.config.label_field),
             str(self.predictor.entity_name),
             str(self.predictor.context_name),
             str(self.predictor.batch_size),
-            str(self.predictor.learning_rate),
+            str(self.config.learning_rate),
         ])
-        
+
+        if self.config.default_root_dir is None:
+            self.config.default_root_dir = self.CACHE_PATH / self.model_id
+
         callbacks = [
-            HFCheckpoint(kwargs.get("default_root_dir", self.CACHE_PATH / self.model_id / "checkpoints"))
+            HFCheckpoint(f"{self.config.default_root_dir}/checkpoints")
         ]
 
-        print("Checkpoints saved at", kwargs.get("default_root_dir", self.CACHE_PATH / self.model_id))
+        print("Checkpoints will be saved at:", self.config.default_root_dir)
+
+        # Filter out the args that aren't valid for pl.Trainer using the signature of __init__ function
+        # This is kind of ugly...
+        pl_trainer_params = inspect.signature(pl.Trainer).parameters
+        pl_trainer_config = {k: v for k, v in dict(self.config).items() if k in pl_trainer_params}
+
         self.trainer = pl.Trainer(
-            default_root_dir=kwargs.get("default_root_dir", self.CACHE_PATH / self.model_id),
-            max_steps=1,
             callbacks=callbacks,
-            **kwargs
+            **pl_trainer_config
         )
-    
+
     def preprocess(self, docs_path: Path, labels_field: Optional[str], annotations_path: Optional[Path] = None):
-        
+
         with open(docs_path, "r") as docs_file:
             all_pytorch_batches = []
 
@@ -97,13 +111,13 @@ class EntityClassificationPredictorTrainer:
                 doc = Document.from_json(json.loads(line))
                 batches = self.predictor.preprocess(doc)
                 label_id_batches: List[List[List[int]]] = []
-                
+
                 if labels_field is not None:
                     # assume the label value is a binary value. (either 1, the token is in the span specified by
                     # the labels_field or 2, it is not)
 
                     label_entities = getattr(doc, labels_field)
-                    
+
                     # masking stategy is "first"
                     # based on here: https://huggingface.co/docs/transformers/tasks/token_classification
                     for batch in batches:
@@ -173,22 +187,72 @@ class EntityClassificationPredictorTrainer:
     def _train(self, docs: DataLoader):
         self.trainer.fit(self.predictor, docs)
 
+@springs.dataclass
+class EntityClassificationTrainConfig:
+    """Stores the default training args"""
+    data_path: Path  # Path to the data to train on. Should be a jsonl file where each row is a doc.
+    label_field: str  # The field in the document to use as the labels for the tokens.
+    entity_name: str = "tokens"  # The field in the document to use as the unit of prediction.
+    context_name: str = "pages"  # The field in the document to use as the input example to the model.
+    model_name_or_path: str = "allenai/scibert_scivocab_uncased"
+    learning_rate: float = 5e-4
 
-def launch():
+    # pytorch lightning trainer args (these are the defaults)
+    accelerator: str = "auto"
+    accumulate_grad_batches: int = 1
+    precision: Union[int, str] = 32
+    devices: Optional[Union[str, int]] = (
+        torch.cuda.device_count() if torch.cuda.is_available() else 1
+    )
+    max_epochs: int = 5
+    max_steps: Optional[int] = None
+    check_val_every_n_epoch: int = 1
+    default_root_dir: Optional[Union[str, Path]] = None
+    log_every_n_steps: int = 1
+    val_check_interval: Union[float, int] = 1.0
+    # Args for development/testing
+    fast_dev_run: bool = False
+    overfit_batches: bool = False
+
+@springs.cli(EntityClassificationTrainConfig)
+def main(config: EntityClassificationTrainConfig):
     """Launch a training run.
     
     For now, the simplest way to do this is to just pass the data. We can abstract this later and add some way to
     configure the training run.
     """
+
+    # Set up the ArgumentParser to take any of the args in TrainConfig
+    # config = EntityClassificationTrainConfig()
+
+    # argp = ArgumentParser()
+    # argp.add_argument("data_path", type=Path, help="Path to the data to train on. Should be a jsonl file where each row is a doc.")
+    # argp.add_argument("label_field", type=str, help="The field in the document to use as the labels for the tokens.")
+
+    # for arg, type_annotation in EntityClassificationTrainConfig.__annotations__.items():
+    #     default = getattr(config, arg)
+    #     argp.add_argument(f"--{arg}", help=f"Default: {default}", default=default)
+    #     # argp.add_argument(f"--{arg}", type=type_annotation, help=f"Default: {default}", default=default)
+
+    # args = argp.parse_args()
+
+    # Update the config with the cli args
+    # for arg in args.__dict__:
+    #     if arg in EntityClassificationTrainConfig.__annotations__:
+    #         setattr(config, arg, getattr(args, arg))
+
+    # Initialize the trainer
     trainer = EntityClassificationPredictorTrainer(
-        EntityClassificationPredictor.from_pretrained(
-            model_name_or_path=TEST_SCIBERT_WEIGHTS,
-            entity_name='tokens',
-            context_name='pages'
-        )
+        predictor=EntityClassificationPredictor.from_pretrained(
+            model_name_or_path=config.model_name_or_path,
+            entity_name=config.entity_name,
+            context_name=config.context_name,
+        ),
+        config=config
     )
-    
+
+    trainer.train(docs_path=config.data_path, annotations_entity_name=config.label_field)
 
 
 if __name__ == "__main__":
-    launch()
+     main()

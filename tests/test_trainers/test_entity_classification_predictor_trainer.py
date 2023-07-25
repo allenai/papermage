@@ -17,7 +17,8 @@ from papermage.predictors.hf_predictors.entity_classification_predictor import (
     EntityClassificationPredictor
 )
 from papermage.trainers.entity_classification_predictor_trainer import (
-    EntityClassificationPredictorTrainer
+    EntityClassificationPredictorTrainer,
+    EntityClassificationTrainConfig,
 )
 
 TEST_SCIBERT_WEIGHTS = 'allenai/scibert_scivocab_uncased'
@@ -42,7 +43,10 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
             context_name='pages'
         )
 
-        self.trainer = EntityClassificationPredictorTrainer(self.predictor)
+        self.trainer = EntityClassificationPredictorTrainer(
+            self.predictor,
+            config=EntityClassificationTrainConfig(max_steps=1),
+        )
 
     def test_train(self):
         if (self.trainer.CACHE_PATH / "default.pt").exists():
