@@ -1,6 +1,8 @@
 /pdfs/
 /temp/
 scripts/
+notebooks/
+lightning_logs/
 
 # Mac Finder Configurations
 .DS_Store

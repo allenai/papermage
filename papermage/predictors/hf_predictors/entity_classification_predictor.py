@@ -104,6 +104,8 @@ class EntityClassificationPredictor(BaseHFPredictor):
         self.batch_size = batch_size
         self.device = device
 
+        self.learning_rate = 5e-4
+
         # handles tokenization, sliding window, truncation, subword to input word mapping, etc.
         self.tokenizer_mapper = TokenizerMapper(
             input_field=self._INPUT_FIELD_NAME,
@@ -141,7 +143,8 @@ class EntityClassificationPredictor(BaseHFPredictor):
             tokenizer=tokenizer,
             pad_to_length=None,  # keeping this `None` is best because of dynamic padding
             fields_pad_ids={
-                self._HF_RESERVED_WORD_IDS: self._HF_RESERVED_WORD_PAD_VALUE
+                self._HF_RESERVED_WORD_IDS: self._HF_RESERVED_WORD_PAD_VALUE,
+                "labels": -100,
             }
         )
         # this casts python Dict[List] into tensors.  if using GPU, would do `device='gpu'`
