@@ -6,7 +6,7 @@
 
 import unittest
 
-from papermage.types import Entity, Span, EntitySpanIndexer
+from papermage.types import Entity, Span, EntitySpanIndexer, Document
 
 
 class TestEntitySpanIndexer(unittest.TestCase):
@@ -50,6 +50,10 @@ class TestEntitySpanIndexer(unittest.TestCase):
             Entity(spans=[Span(9, 10)]),
             Entity(spans=[Span(0, 5), Span(5, 8)])
         ]
+        
+        for i, entity in enumerate(entities_to_index):
+            entity.doc = Document(symbols="test")
+            entity.id = i
 
         index = EntitySpanIndexer(entities_to_index)
 

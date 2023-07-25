@@ -194,10 +194,9 @@ class EntityClassificationPredictor(BaseHFPredictor):
     ) -> List[EntityClassificationBatch]:
         """Processes document into whatever makes sense for the Huggingface model"""
         # (1) get it into a dictionary format that Smashed expects
-        # breakpoint()
         dataset = [
             {
-                self._INPUT_FIELD_NAME: [sg.text for sg in getattr(context, self.entity_name)],
+                self._INPUT_FIELD_NAME: [entity.text for entity in getattr(context, self.entity_name)],
                 self._CONTEXT_ID: i
             }
             for i, context in enumerate(getattr(document, context_name))

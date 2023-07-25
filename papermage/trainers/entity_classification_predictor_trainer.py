@@ -20,9 +20,6 @@ class EntityClassificationPredictorWrapper(pl.LightningModule):
         self.predictor = predictor
     
     def training_step(self, batch, batch_idx) -> Optional[STEP_OUTPUT]:
-        ## TODO: how do we calculate the loss???
-        # inputs, labels = batch
-        # import pytest; pytest.set_trace()
         pytorch_output = self.predictor.model(**batch)
         scores_tensor = torch.softmax(pytorch_output.logits, dim=2)
         return pytorch_output.loss
@@ -35,17 +32,17 @@ class EntityClassificationPredictorWrapper(pl.LightningModule):
         return self.predictor.preprocess(doc, "pages")
     
     def __getattr__(self, name):
-        """Allow access to the predictor's attributes if the wrapper doesn't have them"""
+        """Allow access to the predictor's attributes if the wrapper doesn't have them."""
         if name not in self.__dict__:
             return getattr(self.predictor, name)
 
 
 class HFCheckpoint(pl.Callback):
     def __init__(self, save_dir: str) -> None:
-        """Initialize the ValidatioReportingCallback.
+        """Initialize the HFCheckpoint Callback for saving huggingface checkpoints
 
         Args:
-            save_dir (str): the directory to save the validation results.
+            save_dir (str): the directory to save the huggingface checkpoints.
         """
 
         super().__init__()
@@ -60,6 +57,7 @@ class HFCheckpoint(pl.Callback):
         # to load the model later, that's a TODO for now.
         # del checkpoint["state_dict"]
 
+
 class EntityClassificationPredictorTrainer:
 
     CACHE_PATH = Path(Path.home() / ".cache/papermage")
@@ -70,18 +68,6 @@ class EntityClassificationPredictorTrainer:
 
         self.predictor = EntityClassificationPredictorWrapper(predictor)
         
-        # Set up the pytorch lightning trainer
-        # callbacks = [
-        #     ModelCheckpoint(
-        #         save_top_k=1,
-        #         monitor=monitor,
-        #         mode=mode,
-        #         dirpath=Path(self.args.results_path) / "checkpoints",
-        #         filename=filename,
-        #         auto_insert_metric_name=False,
-        #     ),
-        # ]
-        # model_id = kwargs.get("model_id", None)
         self.model_id = "_".join([
             str(self.predictor.config.name_or_path).replace("/", "-"),
             str(self.predictor.entity_name),
@@ -123,14 +109,15 @@ class EntityClassificationPredictorTrainer:
                     for batch in batches:
                         label_ids: List[List[int]] = []
                         previous_entity_idx = None        
-                        for entity_idxs in batch.entity_ids:
+                        for context_idx, entity_idxs in zip(batch.context_id, batch.entity_ids):
                             labels: List[int] = []
                             for entity_idx in entity_idxs:
                                 if entity_idx is None:
                                     labels.append(-100)
                                 elif entity_idx != previous_entity_idx:
                                     # if the token is within the field, label it as 1
-                                    entity = getattr(doc, self.predictor.entity_name)[entity_idx]
+                                    context = getattr(doc, self.predictor.context_name)[context_idx]
+                                    entity = getattr(context, self.predictor.entity_name)[entity_idx]
                                     overlap = getattr(entity, labels_field)
                                     labels.append(1 if overlap else 0)
                                 else:
@@ -139,7 +126,6 @@ class EntityClassificationPredictorTrainer:
                             label_ids.append(labels)
                         label_id_batches.append(label_ids)
 
-                # import pytest; pytest.set_trace()
                 pytorch_batches = [
                     self.predictor.python_to_torch_mapper.transform(
                     data=self.predictor.list_collator_mapper.transform(
@@ -178,13 +164,11 @@ class EntityClassificationPredictorTrainer:
             print(f"Loading cached preprocessed batches from {cache_file}")
             preprocessed_batches = torch.load(cache_file)
 
-        # print(cache_path)
         # create the dataloader
         docs_dataloader = DataLoader(preprocessed_batches, batch_size=None)  # disable automatic batching
 
         # Run the training loop
         self._train(docs_dataloader)
-        # self._train(preprocessed_batches)
     
     def _train(self, docs: DataLoader):
         self.trainer.fit(self.predictor, docs)
