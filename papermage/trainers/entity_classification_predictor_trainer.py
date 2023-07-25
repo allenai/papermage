@@ -4,7 +4,7 @@ benjaminn
 import dataclasses
 import inspect
 import json
-from argparse import ArgumentParser
+import os
 from pathlib import Path
 from typing import List, Optional, Union, Literal
 
@@ -65,7 +65,8 @@ class HFCheckpoint(pl.Callback):
 
 class EntityClassificationPredictorTrainer:
 
-    CACHE_PATH = Path(Path.home() / ".cache/papermage")
+    CACHE_PATH = Path(os.environ.get("PAPERMAGE_CACHE_DIR", 
+        Path.home() / ".cache/papermage"))
 
     def __init__(self, predictor: EntityClassificationPredictor, config: DictConfig):
         if not self.CACHE_PATH.exists():
@@ -187,6 +188,7 @@ class EntityClassificationPredictorTrainer:
     def _train(self, docs: DataLoader):
         self.trainer.fit(self.predictor, docs)
 
+
 @springs.dataclass
 class EntityClassificationTrainConfig:
     """Stores the default training args"""
@@ -197,7 +199,8 @@ class EntityClassificationTrainConfig:
     model_name_or_path: str = "allenai/scibert_scivocab_uncased"
     learning_rate: float = 5e-4
 
-    # pytorch lightning trainer args (these are the defaults)
+    # pytorch-lightning trainer args (these are the defaults). Some of the types are wrong because OmeagConf can't
+    # load in arbitrary types.
     accelerator: str = "auto"
     accumulate_grad_batches: int = 1
     precision: Union[int, str] = 32
@@ -214,6 +217,7 @@ class EntityClassificationTrainConfig:
     fast_dev_run: bool = False
     overfit_batches: bool = False
 
+
 @springs.cli(EntityClassificationTrainConfig)
 def main(config: EntityClassificationTrainConfig):
     """Launch a training run.
@@ -221,25 +225,6 @@ def main(config: EntityClassificationTrainConfig):
     For now, the simplest way to do this is to just pass the data. We can abstract this later and add some way to
     configure the training run.
     """
-
-    # Set up the ArgumentParser to take any of the args in TrainConfig
-    # config = EntityClassificationTrainConfig()
-
-    # argp = ArgumentParser()
-    # argp.add_argument("data_path", type=Path, help="Path to the data to train on. Should be a jsonl file where each row is a doc.")
-    # argp.add_argument("label_field", type=str, help="The field in the document to use as the labels for the tokens.")
-
-    # for arg, type_annotation in EntityClassificationTrainConfig.__annotations__.items():
-    #     default = getattr(config, arg)
-    #     argp.add_argument(f"--{arg}", help=f"Default: {default}", default=default)
-    #     # argp.add_argument(f"--{arg}", type=type_annotation, help=f"Default: {default}", default=default)
-
-    # args = argp.parse_args()
-
-    # Update the config with the cli args
-    # for arg in args.__dict__:
-    #     if arg in EntityClassificationTrainConfig.__annotations__:
-    #         setattr(config, arg, getattr(args, arg))
 
     # Initialize the trainer
     trainer = EntityClassificationPredictorTrainer(
