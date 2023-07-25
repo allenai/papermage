@@ -100,7 +100,7 @@ predictors = [
     'smashed==0.1.10',
     'optimum[onnxruntime]==1.4.0',
     'pytorch-lightning==2.0.5',
-    'springs=1.12.3',
+    'springs==1.12.3',
 ]
 
 [tool.pytest.ini_options]
