@@ -9,6 +9,7 @@ import unittest
 import json
 from pathlib import Path
 
+import springs
 import torch
 
 from papermage.types import Document, Entity, Span
@@ -43,9 +44,15 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
             context_name='pages'
         )
 
+        config = springs.from_dataclass(EntityClassificationTrainConfig)
+        config = springs.merge(config, springs.from_dict({
+            'data_path': self.fixture_path / "predictor_training_docs_tiny.jsonl",
+            'label_field': "words_starting_with_td",
+            'max_steps': 1,
+        }))
         self.trainer = EntityClassificationPredictorTrainer(
-            self.predictor,
-            config=EntityClassificationTrainConfig(max_steps=1),
+            predictor=self.predictor,
+            config=config,
         )
 
     def test_train(self):

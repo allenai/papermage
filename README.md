@@ -170,4 +170,4 @@ with open('filename.json') as f_in:
 
 Note: A common pattern for adding fields to a document is to load in a previously saved document, run some additional `Predictors` on it, and save the result.
 
-See `papermage/predictors/README.md` for more information about training your own predictors.
+See `papermage/predictors/README.md` for more information about training customer predictors on your own data.
