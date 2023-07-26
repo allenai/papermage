@@ -87,6 +87,16 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
             for key in set(gold_batch.keys()) | set(test_batch.keys()):
                 assert torch.allclose(gold_batch[key], test_batch[key])
 
+        # test multi-word entities
+        preprocessed_batches_mwe = self.trainer.preprocess(
+            docs_path=self.fixture_path / "predictor_training_docs_tiny.jsonl",
+            labels_field="multi_word_entity",
+        )
+        gold_preprocessed_batches_mwe = torch.load(self.fixture_path / "preprocessed_training_docs_tiny_mwe.pt")
+        for gold_batch, test_batch in zip(gold_preprocessed_batches_mwe, preprocessed_batches_mwe):
+            for key in set(gold_batch.keys()) | set(test_batch.keys()):
+                assert torch.allclose(gold_batch[key], test_batch[key])
+
 
     def save_and_load_checkpoint(self):
         pass

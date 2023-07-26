@@ -115,7 +115,7 @@ class EntityClassificationPredictorTrainer:
 
                 if labels_field is not None:
                     # assume the label value is a binary value. (either 1, the token is in the span specified by
-                    # the labels_field or 2, it is not)
+                    # the labels_field or 0, it is not)
 
                     label_entities = getattr(doc, labels_field)
 
@@ -134,7 +134,16 @@ class EntityClassificationPredictorTrainer:
                                     context = getattr(doc, self.predictor.context_name)[context_idx]
                                     entity = getattr(context, self.predictor.entity_name)[entity_idx]
                                     overlap = getattr(entity, labels_field)
-                                    labels.append(1 if overlap else 0)
+                                    if overlap:
+                                        # assumption: overlap has at most one element (each entity has only one label associated with it)
+                                        # assumption: all spans are contiguous
+                                        if getattr(overlap[0], self.predictor.entity_name)[0] == entity:
+                                            label = 1  # B tag
+                                        else:
+                                            label = 2  # I tag
+                                    else:  # O tag
+                                        label = 0
+                                    labels.append(label)
                                 else:
                                     labels.append(-100)
                                 previous_entity_idx = entity_idx
