@@ -86,10 +86,21 @@ class EntityClassificationPredictorTrainer:
 
         if self.config.default_root_dir is None:
             self.config.default_root_dir = self.CACHE_PATH / self.model_id
+        self.config.default_root_dir.mkdir(parents=True, exist_ok=True)
 
         callbacks = [
             HFCheckpoint(f"{self.config.default_root_dir}/checkpoints")
         ]
+        
+        loggers = []
+        if config.wandb:
+            loggers.append(
+                pl.loggers.WandbLogger(
+                    name=self.model_id,
+                    project="papermage",
+                    save_dir=self.config.default_root_dir,
+                )
+            )
 
         print("Checkpoints will be saved at:", self.config.default_root_dir)
 
@@ -100,6 +111,7 @@ class EntityClassificationPredictorTrainer:
 
         self.trainer = pl.Trainer(
             callbacks=callbacks,
+            logger=loggers,
             **pl_trainer_config
         )
 
@@ -166,26 +178,22 @@ class EntityClassificationPredictorTrainer:
 
             return all_pytorch_batches
 
-    def train(self, docs_path: Path, annotations_entity_name: Optional[str] = None, annotations_path: Optional[Path] = None, model_id: Optional[str] = None):
+    def train(self, docs_path: Path, annotations_entity_name: Optional[str] = None, annotations_path: Optional[Path] = None):
         # If pytorch tensors haven't been created and cached yet
         # preprocess the document to convert it to tensors and cache them
         preprocessed_batches = []
-        if model_id is None or not (self.CACHE_PATH / f"{model_id}.pt").exists():
-            if model_id is None:
-                model_id = "default"  # TODO make this some function of the data and the predictor
-
+        cache_file = self.config.default_root_dir / "inputs.pt"
+        if not cache_file.exists():
             preprocessed_batches = self.preprocess(
                 docs_path=docs_path, labels_field=annotations_entity_name, annotations_path=annotations_path
             )
-            
-            cache_file = self.CACHE_PATH / f"{model_id}.pt"
-            
+
+            print(f"Caching preprocessed batches in: {cache_file}")
             torch.save(preprocessed_batches, cache_file)
             
         else:    
             # load the tensors from the cache
-            cache_file = self.CACHE_PATH / f"{model_id}.pt"
-            print(f"Loading cached preprocessed batches from {cache_file}")
+            print(f"Loading precomputed input batches from: {cache_file}")
             preprocessed_batches = torch.load(cache_file)
 
         # create the dataloader
@@ -208,6 +216,7 @@ class EntityClassificationTrainConfig:
     model_name_or_path: str = "allenai/scibert_scivocab_uncased"
     learning_rate: float = 5e-4
 
+    wandb: bool = False
     # pytorch-lightning trainer args (these are the defaults). Some of the types are wrong because OmeagConf can't
     # load in arbitrary types.
     accelerator: str = "auto"
@@ -217,7 +226,7 @@ class EntityClassificationTrainConfig:
         torch.cuda.device_count() if torch.cuda.is_available() else 1
     )
     max_epochs: int = 5
-    max_steps: Optional[int] = None
+    max_steps: int = -1
     check_val_every_n_epoch: int = 1
     default_root_dir: Optional[Union[str, Path]] = None
     log_every_n_steps: int = 1
@@ -244,7 +253,7 @@ def main(config: EntityClassificationTrainConfig):
         ),
         config=config
     )
-
+    # breakpoint()
     trainer.train(docs_path=config.data_path, annotations_entity_name=config.label_field)
 
 
