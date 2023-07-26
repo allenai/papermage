@@ -41,7 +41,10 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
         self.predictor = EntityClassificationPredictor.from_pretrained(
             model_name_or_path=TEST_SCIBERT_WEIGHTS,
             entity_name='tokens',
-            context_name='pages'
+            context_name='pages',
+            num_labels=3,
+            id2label={0: "O", 1: "B", 2: "I"},
+            label2id={"O": 0, "B": 1, "I": 2},
         )
 
         config = springs.from_dataclass(EntityClassificationTrainConfig)
@@ -56,18 +59,18 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
         )
 
     def test_train(self):
-        if (self.trainer.CACHE_PATH / "default.pt").exists():
-            (self.trainer.CACHE_PATH / "default.pt").unlink()
+        if (self.trainer.config.default_root_dir / "inputs.pt").exists():
+            (self.trainer.config.default_root_dir / "inputs.pt").unlink()
 
         # self.trainer.train(docs_path="tests/fixtures/predictor_training_docs.jsonl", annotations_entity_name="bibs")
         self.trainer.train(docs_path=self.fixture_path / "predictor_training_docs_tiny.jsonl", annotations_entity_name="words_starting_with_td")
 
         # check that the cache file exists
-        assert (self.trainer.CACHE_PATH / "default.pt").exists()
+        assert (self.trainer.config.default_root_dir / "inputs.pt").exists()
 
         # check that we can load in the trained model and run it on the test doc (`self.doc`)
         new_predictor = EntityClassificationPredictor.from_pretrained(
-            model_name_or_path=self.trainer.CACHE_PATH / self.trainer.model_id / "checkpoints",
+            model_name_or_path=self.trainer.config.default_root_dir / "checkpoints",
             entity_name=self.predictor.entity_name,
             context_name=self.predictor.context_name,
         )

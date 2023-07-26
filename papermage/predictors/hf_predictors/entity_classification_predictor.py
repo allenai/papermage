@@ -104,8 +104,6 @@ class EntityClassificationPredictor(BaseHFPredictor):
         self.batch_size = batch_size
         self.device = device
 
-        self.learning_rate = 5e-4
-
         # handles tokenization, sliding window, truncation, subword to input word mapping, etc.
         self.tokenizer_mapper = TokenizerMapper(
             input_field=self._INPUT_FIELD_NAME,

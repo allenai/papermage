@@ -15,6 +15,7 @@ from omegaconf import DictConfig
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from papermage.types import Document, Entity, Span, Box
 from papermage.predictors.hf_predictors.entity_classification_predictor import EntityClassificationPredictor
@@ -23,6 +24,7 @@ class EntityClassificationPredictorWrapper(pl.LightningModule):
     def __init__(self, predictor: EntityClassificationPredictor):
         super().__init__()
         self.predictor = predictor
+        self.learning_rate = None  # this will be set by the trainer
 
     def training_step(self, batch, batch_idx) -> Optional[STEP_OUTPUT]:
         pytorch_output = self.predictor.model(**batch)
@@ -30,7 +32,7 @@ class EntityClassificationPredictorWrapper(pl.LightningModule):
         return pytorch_output.loss
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.predictor.model.parameters(), lr=self.predictor.learning_rate)
+        return torch.optim.Adam(self.predictor.model.parameters(), lr=self.learning_rate)
 
     def preprocess(self, doc: Document) -> List:
         # is this the default context we should use?
@@ -73,6 +75,8 @@ class EntityClassificationPredictorTrainer:
             self.CACHE_PATH.mkdir(parents=True)
 
         self.predictor = EntityClassificationPredictorWrapper(predictor)
+        self.predictor.learning_rate = config.learning_rate
+
         self.config = config
 
         self.model_id = "_".join([
@@ -91,7 +95,7 @@ class EntityClassificationPredictorTrainer:
         callbacks = [
             HFCheckpoint(f"{self.config.default_root_dir}/checkpoints")
         ]
-        
+
         loggers = []
         if config.wandb:
             loggers.append(
@@ -119,9 +123,10 @@ class EntityClassificationPredictorTrainer:
 
         with open(docs_path, "r") as docs_file:
             all_pytorch_batches = []
+            
+            docs = [Document.from_json(json.loads(line)) for line in docs_file]
 
-            for line in docs_file:
-                doc = Document.from_json(json.loads(line))
+            for doc in tqdm(docs, desc="preprocessing"):
                 batches = self.predictor.preprocess(doc)
                 label_id_batches: List[List[List[int]]] = []
 
@@ -250,6 +255,9 @@ def main(config: EntityClassificationTrainConfig):
             model_name_or_path=config.model_name_or_path,
             entity_name=config.entity_name,
             context_name=config.context_name,
+            num_labels=3,
+            id2label={0: "O", 1: "B", 2: "I"},
+            label2id={"O": 0, "B": 1, "I": 2},
         ),
         config=config
     )
