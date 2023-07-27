@@ -43,7 +43,6 @@ class EntityClassificationPredictorWrapper(pl.LightningModule):
             num_warmup_steps=0,
             num_training_steps=self.num_training_steps
         )
-
         return {"optimizer": optimizer, "lr_scheduler": scheduler}
 
     def preprocess(self, doc: Document, context_name: str = "pages") -> List:
@@ -97,15 +96,24 @@ class EntityClassificationPredictorTrainer:
         else:
             self.device = self.config.accelerator
 
-        self.model_id = "_".join([
-            str(self.predictor.config.name_or_path).replace("/", "-"),
+        self.data_id = "_".join([
             str(self.config.label_field),
             str(self.predictor.entity_name),
             str(self.predictor.context_name),
             str(self.predictor.batch_size),
+        ])
+
+        if self.config.data_notes:
+            self.data_id += f"_{self.config.data_notes}"
+
+        self.model_id = "_".join([
+            str(self.predictor.config.name_or_path).replace("/", "-"),
+            self.data_id,
             str(self.config.learning_rate),
             str(self.config.seed),
+            str(self.config.max_epochs),
         ])
+
         if self.config.notes:
             self.model_id += "_" + self.config.notes
 
@@ -141,7 +149,7 @@ class EntityClassificationPredictorTrainer:
         )
 
 
-    def compute_labels_from_entities(self, doc: Document, labels_fields: str, return_labels_by_entity=False):
+    def compute_labels_from_entities(self, doc: Document, labels_fields: List[str], return_labels_by_entity=False):
         """
         Computes the gold labels given a document and which field of the doc contains the label.
 
@@ -175,14 +183,18 @@ class EntityClassificationPredictorTrainer:
                         # if the token is within the field, label it as 1
                         context = getattr(doc, self.predictor.context_name)[context_idx]
                         entity = getattr(context, self.predictor.entity_name)[entity_idx]
-                        overlap = getattr(entity, labels_fields)
-                        if overlap:
-                            # assumption: overlap has at most one element (each entity has only one label associated with it)
-                            # assumption: all spans are contiguous
-                            if getattr(overlap[0], self.predictor.entity_name)[0] == entity:
-                                label = 1  # B tag
-                            else:
-                                label = 2  # I tag
+                        for labels_field in labels_fields:
+                            overlap = getattr(entity, labels_field)
+                            if overlap:
+                                # assumption: overlap has at most one element (each entity has only one label associated with it)
+                                # assumption: all spans are contiguous
+                                if getattr(overlap[0], self.predictor.entity_name)[0] == entity:
+                                    label = self.predictor.config.label2id[f"B-{labels_field}"]
+                                    # label = 1  # B tag
+                                else:
+                                    label = self.predictor.config.label2id[f"I-{labels_field}"]
+                                    # label = 2  # I tag
+                                break
                         else:  # O tag
                             label = 0
                         label_ids.append(label)
@@ -199,7 +211,7 @@ class EntityClassificationPredictorTrainer:
             return batches, label_id_batches
 
 
-    def preprocess(self, docs_path: Path, labels_fields: Optional[str], annotations_path: Optional[Path] = None):
+    def preprocess(self, docs_path: Path, labels_fields: Optional[List[str]], annotations_path: Optional[Path] = None):
 
         with open(docs_path, "r") as docs_file:
             all_pytorch_batches = []
@@ -227,14 +239,14 @@ class EntityClassificationPredictorTrainer:
             return all_pytorch_batches
 
 
-    def train(self, docs_path: Path, annotations_entity_name: Optional[str] = None, annotations_path: Optional[Path] = None):
+    def train(self, docs_path: Path, annotations_entity_names: Optional[List[str]] = None, annotations_path: Optional[Path] = None):
         # If pytorch tensors haven't been created and cached yet
         # preprocess the document to convert it to tensors and cache them
         preprocessed_batches = []
         cache_file = self.config.default_root_dir / "inputs.pt"
         if not cache_file.exists():
             preprocessed_batches = self.preprocess(
-                docs_path=docs_path, labels_fields=annotations_entity_name, annotations_path=annotations_path
+                docs_path=docs_path, labels_fields=annotations_entity_names, annotations_path=annotations_path
             )
 
             print(f"Caching preprocessed batches in: {cache_file}")
@@ -262,27 +274,28 @@ class EntityClassificationPredictorTrainer:
         self.trainer.fit(self.predictor, docs)
 
 
-    def eval(self, docs_path: Path, annotations_entity_name: str = None):
+    def eval(self, docs_path: Path, annotations_entity_names: List[str]):
         """This is going to be a bit different from just calling `predict` on the predictor.
 
-        This is because we might want to cache the inputs to pytorch."""
+        This is because we might want to cache the inputs to pytorch and because we need
+        to compute the labels.
+        """
         self.predictor.model.to(self.device)
         docs = []
         with open(docs_path) as f:
             for line in f:
                 docs.append(Document.from_json(json.loads(line)))
 
-
         all_batches = []
         all_gold_labels = []
         all_pred_labels = []
         cache_file = self.config.default_root_dir / "test_inputs.pt"
         if not cache_file.exists():
-            for doc_i, document in tqdm(enumerate(docs), desc="preprocessing", total=len(docs)):
+            for document in tqdm(docs, desc="preprocessing", total=len(docs)):
                 # Wraps the preprocess step - this should be cached
                 batches, gold_labels = self.compute_labels_from_entities(
                     doc=document,
-                    labels_field=annotations_entity_name,
+                    labels_fields=annotations_entity_names,
                     return_labels_by_entity=True,
                 )
                 gold_labels = [self.predictor.config.id2label[lab] for lab in gold_labels]
@@ -323,10 +336,11 @@ class EntityClassificationPredictorTrainer:
                         annotation.spans[0].end])
             all_extracted_text.append(extracted_text)
 
-
         # Calculate precision, recall, f1, accuracy
-        clf_report = seqeval.metrics.classification_report(all_gold_labels, all_pred_labels)
-        # print(all_extracted_text)
+        try:
+            clf_report = seqeval.metrics.classification_report(all_gold_labels, all_pred_labels)
+        except ValueError:
+            clf_report = "No predicted fields."
         (self.config.default_root_dir / "results").mkdir(exist_ok=True)
         with open(self.config.default_root_dir / "results" / "predictions.json", "w") as f:
             json.dump(all_extracted_text, f)
@@ -336,6 +350,8 @@ class EntityClassificationPredictorTrainer:
 
         print(clf_report)
         print("Results saved to:", (self.config.default_root_dir / "results"))
+
+        # return all_gold_labels, all_pred_labels, all_extracted_text
 
 
 @springs.dataclass
@@ -350,6 +366,7 @@ class EntityClassificationTrainConfig:
     learning_rate: float = 5e-4
     mode: str = "train"  # One of "train", "eval"
     notes: str = ""
+    data_notes: str = ""
     seed: int = 470
 
     wandb: bool = False
@@ -380,23 +397,31 @@ def main(config: EntityClassificationTrainConfig):
     configure the training run.
     """
 
+    # parse out the label fields:
+    label_fields = config.label_field.split(",")
+    labels = ["O"] + [f"{initial}-{label}" for initial in "BI" for label in label_fields]
+    id2label = dict(zip(range(len(labels)), labels))
+    label2id = {v: k for k, v in id2label.items()}
+    print(id2label)
+    print(label2id)
+
     # Initialize the trainer
     trainer = EntityClassificationPredictorTrainer(
         predictor=EntityClassificationPredictor.from_pretrained(
             model_name_or_path=config.model_name_or_path,
             entity_name=config.entity_name,
             context_name=config.context_name,
-            num_labels=3,
-            id2label={0: "O", 1: "B", 2: "I"},
-            label2id={"O": 0, "B": 1, "I": 2},
+            num_labels=len(id2label),
+            id2label=id2label,
+            label2id=label2id,
         ),
         config=config
     )
 
     if config.mode == "train":
-        trainer.train(docs_path=config.data_path, annotations_entity_name=config.label_field)
+        trainer.train(docs_path=config.data_path, annotations_entity_names=label_fields)
     elif config.mode == "eval":
-        trainer.eval(docs_path=config.data_path, annotations_entity_name=config.label_field)
+        trainer.eval(docs_path=config.data_path, annotations_entity_names=label_fields)
     else:
         raise ValueError(f"Invalid mode: {config.mode}")
 
