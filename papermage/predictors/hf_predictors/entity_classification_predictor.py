@@ -276,7 +276,8 @@ class EntityClassificationPredictor(BaseHFPredictor):
 
     def _predict_batch(
             self,
-            batch: EntityClassificationBatch
+            batch: EntityClassificationBatch,
+            device: str = "cpu",
     ) -> List[EntityClassificationPrediction]:
         #
         #   preprocessing!!  (padding & tensorification)
@@ -293,6 +294,7 @@ class EntityClassificationPredictor(BaseHFPredictor):
         #   inference!! (preferably on gpu)
         #
         # TODO: add something here for gpu migration
+        pytorch_batch = {k: v.to(device) for k, v in pytorch_batch.items()}
         pytorch_output = self.model(**pytorch_batch)
         scores_tensor = torch.softmax(pytorch_output.logits, dim=2)
         token_scoresss = [

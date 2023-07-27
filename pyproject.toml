@@ -101,7 +101,8 @@ predictors = [
     'optimum[onnxruntime]==1.4.0',
     'pytorch-lightning==2.0.5',
     'springs==1.12.3',
-    'wandb==0.15.7'
+    'wandb==0.15.7',
+    'seqeval==1.2.2',
 ]
 
 [tool.pytest.ini_options]

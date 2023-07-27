@@ -9,8 +9,10 @@ from pathlib import Path
 from typing import List, Optional, Union, Literal
 
 import pytorch_lightning as pl
+import seqeval.metrics
 import springs
 import torch
+import transformers
 from omegaconf import DictConfig
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.utilities.types import STEP_OUTPUT
@@ -25,18 +27,28 @@ class EntityClassificationPredictorWrapper(pl.LightningModule):
         super().__init__()
         self.predictor = predictor
         self.learning_rate = None  # this will be set by the trainer
+        self.num_training_steps = None  # this will be set by the trainer
 
     def training_step(self, batch, batch_idx) -> Optional[STEP_OUTPUT]:
         pytorch_output = self.predictor.model(**batch)
         scores_tensor = torch.softmax(pytorch_output.logits, dim=2)
+        self.log("train_loss", pytorch_output.loss.cpu(), on_step=True)
         return pytorch_output.loss
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.predictor.model.parameters(), lr=self.learning_rate)
+        optimizer = torch.optim.Adam(self.predictor.model.parameters(), lr=self.learning_rate)
+        scheduler = transformers.get_scheduler(
+            "linear",
+            optimizer=optimizer,
+            num_warmup_steps=0,
+            num_training_steps=self.num_training_steps
+        )
 
-    def preprocess(self, doc: Document) -> List:
+        return {"optimizer": optimizer, "lr_scheduler": scheduler}
+
+    def preprocess(self, doc: Document, context_name: str = "pages") -> List:
         # is this the default context we should use?
-        return self.predictor.preprocess(doc, "pages")
+        return self.predictor.preprocess(doc, context_name)
 
     def __getattr__(self, name):
         """Allow access to the predictor's attributes if the wrapper doesn't have them."""
@@ -74,10 +86,16 @@ class EntityClassificationPredictorTrainer:
         if not self.CACHE_PATH.exists():
             self.CACHE_PATH.mkdir(parents=True)
 
+
+        transformers.set_seed(config.seed)
         self.predictor = EntityClassificationPredictorWrapper(predictor)
         self.predictor.learning_rate = config.learning_rate
 
         self.config = config
+        if self.config.accelerator == "auto":
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        else:
+            self.device = self.config.accelerator
 
         self.model_id = "_".join([
             str(self.predictor.config.name_or_path).replace("/", "-"),
@@ -86,7 +104,10 @@ class EntityClassificationPredictorTrainer:
             str(self.predictor.context_name),
             str(self.predictor.batch_size),
             str(self.config.learning_rate),
+            str(self.config.seed),
         ])
+        if self.config.notes:
+            self.model_id += "_" + self.config.notes
 
         if self.config.default_root_dir is None:
             self.config.default_root_dir = self.CACHE_PATH / self.model_id
@@ -119,69 +140,92 @@ class EntityClassificationPredictorTrainer:
             **pl_trainer_config
         )
 
-    def preprocess(self, docs_path: Path, labels_field: Optional[str], annotations_path: Optional[Path] = None):
+
+    def compute_labels_from_entities(self, doc: Document, labels_fields: str, return_labels_by_entity=False):
+        """
+        Computes the gold labels given a document and which field of the doc contains the label.
+
+        if `return_labels_by_entity` is True, the labels returned will be in the same shape as the entity list:
+            ie. they will be a list of labels, with one label per entity. For example, if the entity_name is
+            "token", then each element of the list would be the label associated with that token.
+        if `return_labels_by_entity` is False, the labels are returned in the same shape as the batches. These
+            are ready to directly be fed into the Huggingface model as the labels (eg the correct tokens will
+            be masked out by setting the label to -100.
+        """
+        batches = self.predictor.preprocess(doc, context_name=self.config.context_name)
+        label_id_batches: List[List[List[int]]] = []
+
+        # assume the label value is a binary value. (either 1, the token is in the span specified by
+        # the labels_field or 0, it is not)
+
+        # label_entities = getattr(doc, labels_field)
+
+        # masking stategy is "first"
+        # based on here: https://huggingface.co/docs/transformers/tasks/token_classification
+        labels_by_entity = []
+        for batch in batches:
+            label_id_batch: List[List[int]] = []
+            previous_entity_idx = None
+            for context_idx, entity_idxs in zip(batch.context_id, batch.entity_ids):
+                label_ids: List[int] = []
+                for entity_idx in entity_idxs:
+                    if entity_idx is None:
+                        label_ids.append(-100)
+                    elif entity_idx != previous_entity_idx:
+                        # if the token is within the field, label it as 1
+                        context = getattr(doc, self.predictor.context_name)[context_idx]
+                        entity = getattr(context, self.predictor.entity_name)[entity_idx]
+                        overlap = getattr(entity, labels_fields)
+                        if overlap:
+                            # assumption: overlap has at most one element (each entity has only one label associated with it)
+                            # assumption: all spans are contiguous
+                            if getattr(overlap[0], self.predictor.entity_name)[0] == entity:
+                                label = 1  # B tag
+                            else:
+                                label = 2  # I tag
+                        else:  # O tag
+                            label = 0
+                        label_ids.append(label)
+                        labels_by_entity.append(label)
+                    else:
+                        label_ids.append(-100)
+                    previous_entity_idx = entity_idx
+                label_id_batch.append(label_ids)
+            label_id_batches.append(label_id_batch)
+
+        if return_labels_by_entity:
+            return batches, labels_by_entity
+        else:
+            return batches, label_id_batches
+
+
+    def preprocess(self, docs_path: Path, labels_fields: Optional[str], annotations_path: Optional[Path] = None):
 
         with open(docs_path, "r") as docs_file:
             all_pytorch_batches = []
-            
+
             docs = [Document.from_json(json.loads(line)) for line in docs_file]
 
             for doc in tqdm(docs, desc="preprocessing"):
-                batches = self.predictor.preprocess(doc)
-                label_id_batches: List[List[List[int]]] = []
+                if labels_fields is not None:
+                    batches, label_id_batches = self.compute_labels_from_entities(doc, labels_fields)
 
-                if labels_field is not None:
-                    # assume the label value is a binary value. (either 1, the token is in the span specified by
-                    # the labels_field or 0, it is not)
+                    pytorch_batches = [
+                        self.predictor.python_to_torch_mapper.transform(
+                        data=self.predictor.list_collator_mapper.transform(
+                            data={
+                                self.predictor._HF_RESERVED_INPUT_IDS: batch.input_ids,
+                                self.predictor._HF_RESERVED_ATTN_MASK: batch.attention_mask,
+                                "labels": label_ids,
+                            }
+                        ))
+                        for batch, label_ids in zip(batches, label_id_batches)
+                    ]
 
-                    label_entities = getattr(doc, labels_field)
-
-                    # masking stategy is "first"
-                    # based on here: https://huggingface.co/docs/transformers/tasks/token_classification
-                    for batch in batches:
-                        label_ids: List[List[int]] = []
-                        previous_entity_idx = None        
-                        for context_idx, entity_idxs in zip(batch.context_id, batch.entity_ids):
-                            labels: List[int] = []
-                            for entity_idx in entity_idxs:
-                                if entity_idx is None:
-                                    labels.append(-100)
-                                elif entity_idx != previous_entity_idx:
-                                    # if the token is within the field, label it as 1
-                                    context = getattr(doc, self.predictor.context_name)[context_idx]
-                                    entity = getattr(context, self.predictor.entity_name)[entity_idx]
-                                    overlap = getattr(entity, labels_field)
-                                    if overlap:
-                                        # assumption: overlap has at most one element (each entity has only one label associated with it)
-                                        # assumption: all spans are contiguous
-                                        if getattr(overlap[0], self.predictor.entity_name)[0] == entity:
-                                            label = 1  # B tag
-                                        else:
-                                            label = 2  # I tag
-                                    else:  # O tag
-                                        label = 0
-                                    labels.append(label)
-                                else:
-                                    labels.append(-100)
-                                previous_entity_idx = entity_idx
-                            label_ids.append(labels)
-                        label_id_batches.append(label_ids)
-
-                pytorch_batches = [
-                    self.predictor.python_to_torch_mapper.transform(
-                    data=self.predictor.list_collator_mapper.transform(
-                        data={
-                            self.predictor._HF_RESERVED_INPUT_IDS: batch.input_ids,
-                            self.predictor._HF_RESERVED_ATTN_MASK: batch.attention_mask,
-                            "labels": label_ids,
-                        }
-                    ))
-                    for batch, label_ids in zip(batches, label_id_batches)
-                ]
-
-                all_pytorch_batches.extend(pytorch_batches)
+                    all_pytorch_batches.extend(pytorch_batches)
 
             return all_pytorch_batches
+
 
     def train(self, docs_path: Path, annotations_entity_name: Optional[str] = None, annotations_path: Optional[Path] = None):
         # If pytorch tensors haven't been created and cached yet
@@ -190,7 +234,7 @@ class EntityClassificationPredictorTrainer:
         cache_file = self.config.default_root_dir / "inputs.pt"
         if not cache_file.exists():
             preprocessed_batches = self.preprocess(
-                docs_path=docs_path, labels_field=annotations_entity_name, annotations_path=annotations_path
+                docs_path=docs_path, labels_fields=annotations_entity_name, annotations_path=annotations_path
             )
 
             print(f"Caching preprocessed batches in: {cache_file}")
@@ -202,13 +246,96 @@ class EntityClassificationPredictorTrainer:
             preprocessed_batches = torch.load(cache_file)
 
         # create the dataloader
+        preprocessed_batches = [{k: v.to(self.device) for k, v in batch.items()} for batch in preprocessed_batches]
         docs_dataloader = DataLoader(preprocessed_batches, batch_size=None)  # disable automatic batching
 
+        # breakpoint()
         # Run the training loop
         self._train(docs_dataloader)
-    
+
+
     def _train(self, docs: DataLoader):
+        # The module should automatically be put on the correct device, so I'm not sure why I need to do this.
+        # set the number of training steps for the optimizer.
+        self.predictor.num_training_steps = len(docs) * self.config.max_epochs
+        self.predictor.model.to(self.device)
         self.trainer.fit(self.predictor, docs)
+
+
+    def eval(self, docs_path: Path, annotations_entity_name: str = None):
+        """This is going to be a bit different from just calling `predict` on the predictor.
+
+        This is because we might want to cache the inputs to pytorch."""
+        self.predictor.model.to(self.device)
+        docs = []
+        with open(docs_path) as f:
+            for line in f:
+                docs.append(Document.from_json(json.loads(line)))
+
+
+        all_batches = []
+        all_gold_labels = []
+        all_pred_labels = []
+        cache_file = self.config.default_root_dir / "test_inputs.pt"
+        if not cache_file.exists():
+            for doc_i, document in tqdm(enumerate(docs), desc="preprocessing", total=len(docs)):
+                # Wraps the preprocess step - this should be cached
+                batches, gold_labels = self.compute_labels_from_entities(
+                    doc=document,
+                    labels_field=annotations_entity_name,
+                    return_labels_by_entity=True,
+                )
+                gold_labels = [self.predictor.config.id2label[lab] for lab in gold_labels]
+                all_gold_labels.append(gold_labels)
+                all_batches.append(batches)
+            torch.save({"batches": all_batches, "labels": all_gold_labels}, cache_file)
+        else:
+            cached_data = torch.load(cache_file)
+            all_batches = cached_data["batches"]
+            all_gold_labels = cached_data["labels"]
+
+        all_annotations = []
+        all_extracted_text = []
+        for document, batches in tqdm(zip(docs, all_batches), desc="evaluating", total=len(all_batches)):
+            # What I want: two lists. one of predicted labels and one of gold labels
+            # each item of the list is associated with a entity (eg token)
+            # basically, this amounts to removing the masked tokens from `label_ids`
+            # and combining the ones with the same entity id
+
+            preds = []
+            for batch in batches:
+                for pred in self.predictor.predictor._predict_batch(batch=batch, device=self.device):
+                    preds.append(pred)
+            all_pred_labels.append([pred.label for pred in preds])
+
+            # (3) Postprocess into proper Annotations
+            annotations = self.predictor.predictor.postprocess(
+                doc=document, context_name=self.predictor.context_name, preds=preds
+            )
+
+            all_annotations.append(annotations)
+
+            extracted_text = []
+            for annotation in annotations:
+                if annotation.metadata["label"] != "O":
+                    extracted_text.append(document.symbols[
+                        annotation.spans[0].start:\
+                        annotation.spans[0].end])
+            all_extracted_text.append(extracted_text)
+
+
+        # Calculate precision, recall, f1, accuracy
+        clf_report = seqeval.metrics.classification_report(all_gold_labels, all_pred_labels)
+        # print(all_extracted_text)
+        (self.config.default_root_dir / "results").mkdir(exist_ok=True)
+        with open(self.config.default_root_dir / "results" / "predictions.json", "w") as f:
+            json.dump(all_extracted_text, f)
+
+        with open(self.config.default_root_dir / "results" / "clf_report.txt", "w") as f:
+            f.write(clf_report)
+
+        print(clf_report)
+        print("Results saved to:", (self.config.default_root_dir / "results"))
 
 
 @springs.dataclass
@@ -216,10 +343,14 @@ class EntityClassificationTrainConfig:
     """Stores the default training args"""
     data_path: Path  # Path to the data to train on. Should be a jsonl file where each row is a doc.
     label_field: str  # The field in the document to use as the labels for the tokens.
+    # label_fields: List[str]  # The fields in the document to use as labels for the tokens.
     entity_name: str = "tokens"  # The field in the document to use as the unit of prediction.
     context_name: str = "pages"  # The field in the document to use as the input example to the model.
     model_name_or_path: str = "allenai/scibert_scivocab_uncased"
     learning_rate: float = 5e-4
+    mode: str = "train"  # One of "train", "eval"
+    notes: str = ""
+    seed: int = 470
 
     wandb: bool = False
     # pytorch-lightning trainer args (these are the defaults). Some of the types are wrong because OmeagConf can't
@@ -244,7 +375,7 @@ class EntityClassificationTrainConfig:
 @springs.cli(EntityClassificationTrainConfig)
 def main(config: EntityClassificationTrainConfig):
     """Launch a training run.
-    
+
     For now, the simplest way to do this is to just pass the data. We can abstract this later and add some way to
     configure the training run.
     """
@@ -261,8 +392,13 @@ def main(config: EntityClassificationTrainConfig):
         ),
         config=config
     )
-    # breakpoint()
-    trainer.train(docs_path=config.data_path, annotations_entity_name=config.label_field)
+
+    if config.mode == "train":
+        trainer.train(docs_path=config.data_path, annotations_entity_name=config.label_field)
+    elif config.mode == "eval":
+        trainer.eval(docs_path=config.data_path, annotations_entity_name=config.label_field)
+    else:
+        raise ValueError(f"Invalid mode: {config.mode}")
 
 
 if __name__ == "__main__":
