@@ -62,8 +62,8 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
         )
 
     def test_train(self) -> None:
-        if (self.trainer.config.default_root_dir / "inputs.pt").exists():
-            (self.trainer.config.default_root_dir / "inputs.pt").unlink()
+        if (self.trainer.CACHE_PATH / self.trainer.data_id / "inputs.pt").exists():
+            (self.trainer.CACHE_PATH / self.trainer.data_id / "inputs.pt").unlink()
 
         # self.trainer.train(docs_path="tests/fixtures/predictor_training_docs.jsonl", annotations_entity_name="bibs")
         id2label = {0: "O", 1: "B-words_starting_with_td", 2: "I-words_starting_with_td"}
@@ -77,7 +77,7 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
         )
 
         # check that the cache file exists
-        assert (self.trainer.config.default_root_dir / "inputs.pt").exists()
+        assert (self.trainer.CACHE_PATH / self.trainer.data_id / "inputs.pt").exists()
 
         # check that we can load in the trained model and run it on the test doc (`self.doc`)
         new_predictor = EntityClassificationPredictor.from_pretrained(
@@ -138,8 +138,8 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
 
 
     def test_eval(self):
-        if (self.trainer.config.default_root_dir / "test_inputs.pt").exists():
-            (self.trainer.config.default_root_dir / "test_inputs.pt").unlink()
+        if (self.trainer.CACHE_PATH / self.trainer.data_id / "test_inputs.pt").exists():
+            (self.trainer.CACHE_PATH / self.trainer.data_id / "test_inputs.pt").unlink()
         transformers.set_seed(407)
         self.trainer.predictor.predictor.config.id2label = {0: "O", 1: "B-multi_word_entity", 2: "I-multi_word_entity"}
         self.trainer.predictor.predictor.config.label2id = {"O": 0, "B-multi_word_entity": 1, "I-multi_word_entity": 2}
@@ -149,17 +149,17 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
         )
 
         # Check that inputs are cached
-        assert (self.trainer.config.default_root_dir / "test_inputs.pt").exists()
+        assert (self.trainer.CACHE_PATH / self.trainer.data_id / "test_inputs.pt").exists()
 
         # Check that the outputs are correct
-        with open(self.trainer.config.default_root_dir / "results" / "predictions.json") as f:
-            pred_extractions = json.load(f)
+        with open(self.trainer.config.default_root_dir / "results" / "results.json") as f:
+            pred_results = json.load(f)
 
-        with open(self.fixture_path / "eval_extractions.json") as f:
-            gold_extractions = json.load(f)
+        with open(self.fixture_path / "eval_results.json") as f:
+            gold_results = json.load(f)
 
-        for gold_extraction, pred_extraction in zip(gold_extractions, pred_extractions):
-            assert gold_extraction == pred_extraction
+        for key in gold_results:
+            assert gold_results[key] == pred_results[key]
 
 
     def save_and_load_checkpoint(self):

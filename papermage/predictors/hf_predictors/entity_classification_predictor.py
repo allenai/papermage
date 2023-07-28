@@ -104,6 +104,17 @@ class EntityClassificationPredictor(BaseHFPredictor):
         self.batch_size = batch_size
         self.device = device
 
+        # For some reason, the roberta max_position_embeddings is larger than the actual model context window
+        # so use the model_max_length instead. (We can't replace model_max_length with max_position_embeddings
+        # in general, because model_max_legnth will be set to a very large number if the model length is not
+        # explicitly included in the tokenizer (like in the case of alleani/scibert). As a compromise, check
+        # if the model_max_legnth is big, and it's too big, then use the max_position_embeddings as the context
+        # window size.
+        if tokenizer.model_max_length > 1e29:
+            max_length = self.config.max_position_embeddings
+        else:
+            max_length = tokenizer.model_max_length
+
         # handles tokenization, sliding window, truncation, subword to input word mapping, etc.
         self.tokenizer_mapper = TokenizerMapper(
             input_field=self._INPUT_FIELD_NAME,
@@ -111,7 +122,7 @@ class EntityClassificationPredictor(BaseHFPredictor):
             is_split_into_words=True,
             add_special_tokens=True,
             truncation=True,
-            max_length=tokenizer.model_max_length,
+            max_length=max_length,
             return_overflowing_tokens=True,
             return_word_ids=True
         )
