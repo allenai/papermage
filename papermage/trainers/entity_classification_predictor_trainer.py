@@ -28,6 +28,7 @@ class EntityClassificationPredictorWrapper(pl.LightningModule):
         super().__init__()
         self.predictor = predictor
         self.learning_rate = None  # this will be set by the trainer
+        self.warmup_steps = None  # this will be set by the trainer
         self.num_training_steps = None  # this will be set by the trainer
 
     def training_step(self, batch, batch_idx) -> Optional[STEP_OUTPUT]:
@@ -47,8 +48,8 @@ class EntityClassificationPredictorWrapper(pl.LightningModule):
         scheduler = transformers.get_scheduler(
             "linear",
             optimizer=optimizer,
-            num_warmup_steps=0,
-            num_training_steps=self.num_training_steps
+            num_warmup_steps=self.warmup_steps * self.num_training_steps,
+            num_training_steps=self.num_training_steps,
         )
         return {"optimizer": optimizer, "lr_scheduler": scheduler}
 
@@ -96,6 +97,7 @@ class EntityClassificationPredictorTrainer:
         transformers.set_seed(config.seed)
         self.predictor = EntityClassificationPredictorWrapper(predictor)
         self.predictor.learning_rate = config.learning_rate
+        self.predictor.warmup_steps = config.warmup_steps
 
         self.config = config
         if self.config.accelerator == "auto":
@@ -125,6 +127,7 @@ class EntityClassificationPredictorTrainer:
         self.model_id = "_".join([
             self.data_id,
             str(self.config.learning_rate),
+            str(self.config.warmup_steps),
             str(self.config.seed),
             str(self.config.max_epochs),
         ])
@@ -402,6 +405,7 @@ class EntityClassificationTrainConfig:
     context_name: str = "pages"  # The field in the document to use as the input example to the model.
     model_name_or_path: str = "allenai/scibert_scivocab_uncased"
     learning_rate: float = 5e-4
+    warmup_steps: float = 0.0  # proportion of training steps allocated to warmup
     mode: str = "train"  # One of "train", "eval"
     notes: str = ""
     data_notes: str = ""
