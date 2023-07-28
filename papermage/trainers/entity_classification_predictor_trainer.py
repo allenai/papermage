@@ -10,6 +10,7 @@ from typing import List, Optional, Union, Literal
 
 import pytorch_lightning as pl
 import seqeval.metrics
+import sklearn
 import springs
 import torch
 import transformers
@@ -34,6 +35,12 @@ class EntityClassificationPredictorWrapper(pl.LightningModule):
         scores_tensor = torch.softmax(pytorch_output.logits, dim=2)
         self.log("train_loss", pytorch_output.loss.cpu(), on_step=True)
         return pytorch_output.loss
+
+    def validation_step(self, batch, batch_idx) -> Optional[STEP_OUTPUT]:
+        pytorch_output = self.predictor.model(**batch)
+        self.log("val_loss", pytorch_output.loss.cpu())
+        return pytorch_output.loss
+
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.predictor.model.parameters(), lr=self.learning_rate)
@@ -96,7 +103,15 @@ class EntityClassificationPredictorTrainer:
         else:
             self.device = self.config.accelerator
 
+        if config.mode == "eval":
+            # just extract the original model name from the path
+            # assumes that the model path starts with self.CACHE_PATH
+            model_name = self.config.model_name_or_path[len(str(self.CACHE_PATH)):].strip("/").split("_")[0]
+        else:
+            model_name = str(self.predictor.config.name_or_path).replace("/", "-")
+
         self.data_id = "_".join([
+            model_name,
             str(self.config.label_field),
             str(self.predictor.entity_name),
             str(self.predictor.context_name),
@@ -105,9 +120,9 @@ class EntityClassificationPredictorTrainer:
 
         if self.config.data_notes:
             self.data_id += f"_{self.config.data_notes}"
+        (self.CACHE_PATH / self.data_id).mkdir(exist_ok=True)
 
         self.model_id = "_".join([
-            str(self.predictor.config.name_or_path).replace("/", "-"),
             self.data_id,
             str(self.config.learning_rate),
             str(self.config.seed),
@@ -217,7 +232,7 @@ class EntityClassificationPredictorTrainer:
             all_pytorch_batches = []
 
             docs = [Document.from_json(json.loads(line)) for line in docs_file]
-
+            # breakpoint()
             for doc in tqdm(docs, desc="preprocessing"):
                 if labels_fields is not None:
                     batches, label_id_batches = self.compute_labels_from_entities(doc, labels_fields)
@@ -243,7 +258,8 @@ class EntityClassificationPredictorTrainer:
         # If pytorch tensors haven't been created and cached yet
         # preprocess the document to convert it to tensors and cache them
         preprocessed_batches = []
-        cache_file = self.config.default_root_dir / "inputs.pt"
+        # cache_file = self.config.default_root_dir / "inputs.pt"
+        cache_file = self.CACHE_PATH / self.data_id / "inputs.pt"
         if not cache_file.exists():
             preprocessed_batches = self.preprocess(
                 docs_path=docs_path, labels_fields=annotations_entity_names, annotations_path=annotations_path
@@ -261,7 +277,6 @@ class EntityClassificationPredictorTrainer:
         preprocessed_batches = [{k: v.to(self.device) for k, v in batch.items()} for batch in preprocessed_batches]
         docs_dataloader = DataLoader(preprocessed_batches, batch_size=None)  # disable automatic batching
 
-        # breakpoint()
         # Run the training loop
         self._train(docs_dataloader)
 
@@ -289,7 +304,8 @@ class EntityClassificationPredictorTrainer:
         all_batches = []
         all_gold_labels = []
         all_pred_labels = []
-        cache_file = self.config.default_root_dir / "test_inputs.pt"
+        # cache_file = self.config.default_root_dir / "test_inputs.pt"
+        cache_file = self.CACHE_PATH / self.data_id / "test_inputs.pt"
         if not cache_file.exists():
             for document in tqdm(docs, desc="preprocessing", total=len(docs)):
                 # Wraps the preprocess step - this should be cached
@@ -314,7 +330,7 @@ class EntityClassificationPredictorTrainer:
             # each item of the list is associated with a entity (eg token)
             # basically, this amounts to removing the masked tokens from `label_ids`
             # and combining the ones with the same entity id
-
+            # breakpoint()
             preds = []
             for batch in batches:
                 for pred in self.predictor.predictor._predict_batch(batch=batch, device=self.device):
@@ -336,19 +352,41 @@ class EntityClassificationPredictorTrainer:
                         annotation.spans[0].end])
             all_extracted_text.append(extracted_text)
 
-        # Calculate precision, recall, f1, accuracy
+        # Calculate precision, recall, f1, accuracy at the span level and token level
         try:
-            clf_report = seqeval.metrics.classification_report(all_gold_labels, all_pred_labels)
+            clf_report_span = seqeval.metrics.classification_report(all_gold_labels, all_pred_labels)
         except ValueError:
-            clf_report = "No predicted fields."
+            clf_report_span = "No predicted fields."
+
+        # Calculate the p, r, f1, at the token level (like in the VILA paper).
+        # To do this, remove the B-/I- tag from the label and just use the field name
+        # (E.g. "B-Title"[:2] => "Title")
+        clf_report_token = sklearn.metrics.classification_report(
+            [gold_lab[2:] for gold_labels in all_gold_labels for gold_lab in gold_labels],
+            [pred_lab[2:] for pred_labels in all_pred_labels for pred_lab in pred_labels]
+        )
+        
         (self.config.default_root_dir / "results").mkdir(exist_ok=True)
-        with open(self.config.default_root_dir / "results" / "predictions.json", "w") as f:
-            json.dump(all_extracted_text, f)
 
-        with open(self.config.default_root_dir / "results" / "clf_report.txt", "w") as f:
-            f.write(clf_report)
+        with open(self.config.default_root_dir / "results" / "clf_report_token.txt", "w") as f:
+            f.write(clf_report_token)
 
-        print(clf_report)
+        with open(self.config.default_root_dir / "results" / "clf_report_span.txt", "w") as f:
+            f.write(clf_report_span)
+
+        # breakpoint()
+        with open(self.config.default_root_dir / "results" / "results.json", "w") as f:
+            json.dump({
+                "y_gold": all_gold_labels,
+                "y_hat": all_pred_labels,
+                "annotations": [[
+                    annotation.to_json()
+                    for annotation in annotations
+                ] for annotations in all_annotations]
+            }, f)
+
+        print("Token level prediction")
+        print(clf_report_token)
         print("Results saved to:", (self.config.default_root_dir / "results"))
 
         # return all_gold_labels, all_pred_labels, all_extracted_text
@@ -404,6 +442,15 @@ def main(config: EntityClassificationTrainConfig):
     label2id = {v: k for k, v in id2label.items()}
     print(id2label)
     print(label2id)
+    kwargs = {
+        "num_labels": len(id2label),
+        "id2label": id2label,
+        "label2id": label2id
+    }
+
+    if "roberta" in config.model_name_or_path:
+        kwargs["add_prefix_space"] = True
+        # kwargs["max_position_embeddings"] = 512  # This is set to 514 for some reason...
 
     # Initialize the trainer
     trainer = EntityClassificationPredictorTrainer(
@@ -411,9 +458,7 @@ def main(config: EntityClassificationTrainConfig):
             model_name_or_path=config.model_name_or_path,
             entity_name=config.entity_name,
             context_name=config.context_name,
-            num_labels=len(id2label),
-            id2label=id2label,
-            label2id=label2id,
+            **kwargs
         ),
         config=config
     )

@@ -111,7 +111,7 @@ class EntityClassificationPredictor(BaseHFPredictor):
             is_split_into_words=True,
             add_special_tokens=True,
             truncation=True,
-            max_length=model.config.max_position_embeddings,
+            max_length=tokenizer.model_max_length,
             return_overflowing_tokens=True,
             return_word_ids=True
         )
@@ -174,6 +174,10 @@ class EntityClassificationPredictor(BaseHFPredictor):
         tokenizer = transformers.AutoTokenizer.from_pretrained(
             pretrained_model_name_or_path=model_name_or_path, *args, **kwargs
         )
+
+        if "add_prefix_space" in kwargs:
+            kwargs.pop("add_prefix_space")
+
         config = transformers.AutoConfig.from_pretrained(
             pretrained_model_name_or_path=model_name_or_path, *args, **kwargs
         )
