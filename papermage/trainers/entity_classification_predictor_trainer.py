@@ -10,7 +10,7 @@ from typing import List, Optional, Union, Literal
 
 import pytorch_lightning as pl
 import seqeval.metrics
-import sklearn
+import sklearn.metrics
 import springs
 import torch
 import transformers
