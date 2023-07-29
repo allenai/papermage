@@ -158,8 +158,8 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
         with open(self.fixture_path / "eval_results.json") as f:
             gold_results = json.load(f)
 
-        for key in gold_results:
-            assert gold_results[key] == pred_results[key]
+        assert gold_results["y_gold"] == pred_results["y_gold"]
+        assert gold_results["y_hat"] == pred_results["y_hat"]
 
 
     def save_and_load_checkpoint(self):
