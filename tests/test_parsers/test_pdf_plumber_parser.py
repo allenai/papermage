@@ -19,7 +19,7 @@ class TestPDFPlumberParser(unittest.TestCase):
     def setUp(self) -> None:
         self.fixture_path = pathlib.Path(__file__).parent.parent / "fixtures"
         self.parser = PDFPlumberParser()
-        self.doc = self.parser.parse(input_pdf_path=self.fixture_path / "2304.02623v1.pdf")
+        self.doc = self.parser.parse(input_pdf_path=str(self.fixture_path / "2304.02623v1.pdf"))
 
     def test_parse(self):
         # right output type

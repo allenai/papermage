@@ -75,7 +75,7 @@ class EntitySpanIndexer(Indexer):
 
     def find(self, query: Entity) -> List[Entity]:
         if not isinstance(query, Entity):
-            raise ValueError(f'SpanGroupIndexer only works with `query` that is SpanGroup type')
+            raise ValueError(f'EntityIndexer only works with `query` that is Entity type')
 
         if not query.spans:
             return []
@@ -87,11 +87,10 @@ class EntitySpanIndexer(Indexer):
                 matched_ids.add(matched_id)
 
         matched_entities = [self._entities[matched_id] for matched_id in matched_ids]
-        return list(matched_entities)
 
         # TODO: kylel - is this necessary? seems like already does this (see tests)
         # Retrieval above doesn't preserve document order; sort here
         # TODO: provide option to return matched span groups in same order as self._entities
         #   (the span groups the index was built with originally)
-        # return sorted(list(matched_span_groups))
+        return sorted(list(matched_entities))
 

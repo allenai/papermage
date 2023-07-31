@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Union
 from papermage.types import Span, Box, Metadata, Annotation
 
 if TYPE_CHECKING:
-    from mmda.types.document import Document
+    from papermage.types.document import Document
 
 
 class Entity(Annotation):
@@ -90,4 +90,10 @@ class Entity(Annotation):
     def __iter__(self):
         """By default, iterate over the spans"""
         yield from self.spans
+
+    def __lt__(self, other: "Entity"):
+        if self.id and other.id:
+            return self.id < other.id
+        else:
+            return self.start < other.start
 
