@@ -64,5 +64,5 @@ trained_predictor = EntityClassificationPredictor.from_pretrained(
     context_name=context_name,     # specified in EntityClassificationTrainConfig. Probably "pages".
 )
 
-token_tags = trained_predictor.predict(document=doc)
+token_tags = trained_predictor.predict(doc=doc)
 ```

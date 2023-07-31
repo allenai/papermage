@@ -36,7 +36,7 @@ class TestEntityClassificationPredictor(unittest.TestCase):
         predictor = EntityClassificationPredictor.from_pretrained(
             model_name_or_path=TEST_SCIBERT_WEIGHTS, entity_name="tokens", context_name="pages"
         )
-        token_tags = predictor.predict(document=self.doc)
+        token_tags = predictor.predict(doc=self.doc)
         assert len(token_tags) == len([token for page in self.doc.pages for token in page.tokens])
 
         self.doc.annotate_entity(field_name="token_tags", entities=token_tags)
@@ -46,19 +46,19 @@ class TestEntityClassificationPredictor(unittest.TestCase):
 
     def test_predict_bibs_tokens(self):
         self.predictor.context_name = "bibs"
-        token_tags = self.predictor.predict(document=self.doc)
+        token_tags = self.predictor.predict(doc=self.doc)
         assert len(token_tags) == len([token for bib in self.doc.bibs for token in bib.tokens])
 
     def test_missing_fields(self):
         self.predictor.entity_name = "OHNO"
         with self.assertRaises(AssertionError) as e:
-            self.predictor.predict(document=self.doc)
+            self.predictor.predict(doc=self.doc)
             assert "OHNO" in e.exception
 
         self.predictor.entity_name = "tokens"
         self.predictor.context_name = "BLABLA"
         with self.assertRaises(AssertionError) as e:
-            self.predictor.predict(document=self.doc)
+            self.predictor.predict(doc=self.doc)
             assert "BLABLA" in e.exception
 
         self.predictor.context_name = "pages"
@@ -70,7 +70,7 @@ class TestEntityClassificationPredictor(unittest.TestCase):
             context_name="pages",
             add_prefix_space=True,  # Needed for roberta
         )
-        token_tags = predictor.predict(document=self.doc)
+        token_tags = predictor.predict(doc=self.doc)
         assert len(token_tags) == len([token for page in self.doc.pages for token in page.tokens])
 
         self.doc.annotate_entity(field_name="token_tags", entities=token_tags)

@@ -204,7 +204,7 @@ class EntityClassificationPredictor(BasePredictor):
     def REQUIRED_DOCUMENT_FIELDS(self) -> List[str]:
         return [self.context_name, self.entity_name]
 
-    def preprocess(self, document: Document, context_name: str) -> List[EntityClassificationBatch]:
+    def preprocess(self, doc: Document, context_name: str) -> List[EntityClassificationBatch]:
         """Processes document into whatever makes sense for the Huggingface model"""
         # (1) get it into a dictionary format that Smashed expects
 
@@ -213,7 +213,7 @@ class EntityClassificationPredictor(BasePredictor):
                 self._INPUT_FIELD_NAME: [entity.text for entity in getattr(context, self.entity_name)],
                 self._CONTEXT_ID: i,
             }
-            for i, context in enumerate(getattr(document, context_name))
+            for i, context in enumerate(getattr(doc, context_name))
         ]
 
         # (2) apply Smashed
@@ -268,11 +268,9 @@ class EntityClassificationPredictor(BasePredictor):
                 annotations.append(new_entity)
         return annotations
 
-    def _predict(self, document: Document) -> List[Annotation]:
+    def _predict(self, doc: Document) -> List[Annotation]:
         # (1) Make batches
-        batches: List[EntityClassificationBatch] = self.preprocess(
-            document=document, context_name=self.context_name
-        )
+        batches: List[EntityClassificationBatch] = self.preprocess(doc=doc, context_name=self.context_name)
 
         # (2) Predict each batch.
         preds: List[EntityClassificationPrediction] = []
@@ -281,7 +279,7 @@ class EntityClassificationPredictor(BasePredictor):
                 preds.append(pred)
 
         # (3) Postprocess into proper Annotations
-        annotations = self.postprocess(doc=document, context_name=self.context_name, preds=preds)
+        annotations = self.postprocess(doc=doc, context_name=self.context_name, preds=preds)
         return annotations
 
     def _predict_batch(

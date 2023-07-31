@@ -89,7 +89,7 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
             label2id=label2id,
         )
 
-        token_tags = new_predictor.predict(document=self.doc)
+        token_tags = new_predictor.predict(doc=self.doc)
         assert len(token_tags) == len([token for page in self.doc.pages for token in page.tokens])
 
     def test_preprocess(self):

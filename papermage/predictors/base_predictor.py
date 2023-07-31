@@ -29,20 +29,20 @@ class BasePredictor:
         """
         raise NotImplementedError
 
-    def _doc_field_checker(self, document: Document) -> None:
+    def _doc_field_checker(self, doc: Document) -> None:
         if self.REQUIRED_DOCUMENT_FIELDS is not None:
             for field in self.REQUIRED_DOCUMENT_FIELDS:
                 assert (
-                    field in document.fields
-                ), f"The input Document object {document} doesn't contain the required field {field}"
+                    field in doc.fields
+                ), f"The input Document object {doc} doesn't contain the required field {field}"
 
-    def predict(self, document: Document) -> List[Annotation]:
+    def predict(self, doc: Document) -> List[Annotation]:
         """For all the predictors, the input is a document object, and
         the output is a list of annotations.
         """
-        self._doc_field_checker(document)
-        return self._predict(document=document)
+        self._doc_field_checker(doc)
+        return self._predict(doc=doc)
 
     @abstractmethod
-    def _predict(document: Document) -> List[Annotation]:
+    def _predict(doc: Document) -> List[Annotation]:
         raise NotImplementedError
