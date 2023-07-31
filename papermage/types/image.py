@@ -111,3 +111,17 @@ class Image:
             return False
         else:
             return True
+
+    def _repr_png_(self):
+        """iPython display hook support for PNG format.
+
+        :returns: PNG version of the image as bytes
+        """
+        return self.pilimage._repr_image("PNG", compress_level=1)
+
+    def _repr_jpeg_(self):
+        """iPython display hook support for JPEG format.
+
+        :returns: JPEG version of the image as bytes
+        """
+        return self.pilimage._repr_image("JPEG")
