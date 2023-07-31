@@ -16,8 +16,8 @@ from papermage.types import Span
 
 class Box:
     def __init__(self, l: float, t: float, w: float, h: float, page: int):
-        assert w >= 0.0, 'Box width cant be negative'
-        assert h >= 0.0, 'Box height cant be negative'
+        assert w >= 0.0, "Box width cant be negative"
+        assert h >= 0.0, "Box height cant be negative"
         self.l = float(l)
         self.t = float(t)
         self.w = float(w)
@@ -35,10 +35,19 @@ class Box:
         return Box(l=l, t=t, w=w, h=h, page=int(page))
 
     def __repr__(self):
-        return f'Box{self.to_json()}'
+        return f"Box{self.to_json()}"
 
     @classmethod
-    def from_xy_coordinates(cls, x1: float, y1: float, x2: float, y2: float, page: int, page_width: Optional[float] = None, page_height: Optional[float] = None):
+    def from_xy_coordinates(
+        cls,
+        x1: float,
+        y1: float,
+        x2: float,
+        y2: float,
+        page: int,
+        page_width: Optional[float] = None,
+        page_height: Optional[float] = None,
+    ):
         """Create a Box from the top-left and bottom-right coordinates.
 
         If the page width and height are provided and coordinates lie outside the page, they are clipped to the
@@ -54,7 +63,7 @@ class Box:
             _y1, _y2 = np.clip([y1, y2], 0, page_height)
 
         if (_x1, _y1, _x2, _y2) != (x1, y1, x2, y2):
-            logging.warn(
+            logging.warning(
                 f"The coordinates ({x1}, {y1}, {x2}, {y2}) are not valid and converted to ({_x1}, {_y1}, {_x2}, {_y2})."
             )
 
@@ -64,7 +73,7 @@ class Box:
     def xy_coordinates(self) -> Tuple[float, float, float, float]:
         return self.l, self.t, self.l + self.w, self.t + self.h
 
-    def to_relative(self, page_width: float, page_height: float) -> 'Box':
+    def to_relative(self, page_width: float, page_height: float) -> "Box":
         """Get the relative coordinates of self based on page_width, page_height."""
         return self.__class__(
             l=float(self.l) / page_width,
@@ -112,10 +121,10 @@ class Box:
         return True
 
     @classmethod
-    def create_enclosing_box(cls, boxes: List['Box']) -> 'Box':
+    def create_enclosing_box(cls, boxes: List["Box"]) -> "Box":
         """Create the narrowest Box that completely encloses all the input Boxes."""
         if not boxes:
-            raise ValueError(f'`boxes` should be non-empty.')
+            raise ValueError(f"`boxes` should be non-empty.")
         unique_pages = {box.page for box in boxes}
         if len(unique_pages) != 1:
             raise ValueError(f"Boxes not all on same page. Pages={unique_pages}")
