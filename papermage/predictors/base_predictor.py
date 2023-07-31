@@ -1,25 +1,22 @@
-from dataclasses import dataclass
+"""
+
+Base class for Predictors.
+
+@shannons, @kylel
+
+"""
+
 from abc import abstractmethod
-from typing import Union, List, Dict, Any
+from typing import Any, Dict, List, Union
 
 from papermage.types import Annotation, Document
 
 
 class BasePredictor:
-
-    ###################################################################
-    ##################### Necessary Model Variables ###################
-    ###################################################################
-
-    # TODO[Shannon] Add the check for required backends in the future.
-    # So different models might require different backends:
-    # For example, LayoutLM only needs transformers, but LayoutLMv2
-    # needs transformers and Detectron2. It is the model creators'
-    # responsibility to check the required backends.
     @property
     @abstractmethod
     def REQUIRED_BACKENDS(self):
-        return None
+        raise NotImplementedError
 
     @property
     @abstractmethod
@@ -30,11 +27,7 @@ class BasePredictor:
         will perform the check to ensure that the document contains all
         the specified fields.
         """
-        return None
-
-    ###################################################################
-    ######################### Core Methods ############################
-    ###################################################################
+        raise NotImplementedError
 
     def _doc_field_checker(self, document: Document) -> None:
         if self.REQUIRED_DOCUMENT_FIELDS is not None:
@@ -43,12 +36,13 @@ class BasePredictor:
                     field in document.fields
                 ), f"The input Document object {document} doesn't contain the required field {field}"
 
-    # TODO[Shannon] Allow for some preprocessed document input
-    # representation for better performance?
-    @abstractmethod
     def predict(self, document: Document) -> List[Annotation]:
         """For all the predictors, the input is a document object, and
         the output is a list of annotations.
         """
         self._doc_field_checker(document)
-        return []
+        return self._predict(document=document)
+
+    @abstractmethod
+    def _predict(document: Document) -> List[Annotation]:
+        raise NotImplementedError
