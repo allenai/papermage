@@ -78,7 +78,6 @@ class EntityClassificationPredictor(BasePredictor):
     """
 
     REQUIRED_BACKENDS = ["transformers", "torch", "smashed"]
-    REQUIRED_DOCUMENT_FIELDS: List[str] = []
 
     _INPUT_FIELD_NAME = "inputs"
     _CONTEXT_ID = "context_id"
@@ -201,6 +200,10 @@ class EntityClassificationPredictor(BasePredictor):
         )
         return predictor
 
+    @property
+    def REQUIRED_DOCUMENT_FIELDS(self) -> List[str]:
+        return [self.context_name, self.entity_name]
+
     def preprocess(self, document: Document, context_name: str) -> List[EntityClassificationBatch]:
         """Processes document into whatever makes sense for the Huggingface model"""
         # (1) get it into a dictionary format that Smashed expects
@@ -265,11 +268,7 @@ class EntityClassificationPredictor(BasePredictor):
                 annotations.append(new_entity)
         return annotations
 
-    def predict(self, document: Document) -> List[Annotation]:
-        # (0) Check fields
-        assert self.entity_name in document.fields, f"Input doc missing {self.entity_name}"
-        assert self.context_name in document.fields, f"Input doc missing {self.context_name}"
-
+    def _predict(self, document: Document) -> List[Annotation]:
         # (1) Make batches
         batches: List[EntityClassificationBatch] = self.preprocess(
             document=document, context_name=self.context_name

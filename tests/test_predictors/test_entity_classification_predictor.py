@@ -5,6 +5,7 @@
 """
 
 import json
+import pathlib
 import unittest
 
 from papermage.parsers import PDFPlumberParser
@@ -17,7 +18,8 @@ TEST_SCIBERT_WEIGHTS = "allenai/scibert_scivocab_uncased"
 
 class TestEntityClassificationPredictor(unittest.TestCase):
     def setUp(self):
-        with open("tests/fixtures/entity_classification_predictor_test_doc_papermage.json", "r") as f:
+        self.fixture_path = pathlib.Path(__file__).parent.parent / "fixtures"
+        with open(self.fixture_path / "entity_classification_predictor_test_doc_papermage.json", "r") as f:
             test_doc_json = json.load(f)
         self.doc = Document.from_json(doc_json=test_doc_json)
         ent1 = Entity(spans=[Span(start=86, end=456)])
