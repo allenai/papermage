@@ -8,9 +8,7 @@ import json
 import unittest
 
 from papermage.parsers import PDFPlumberParser
-from papermage.predictors.entity_classification_predictor import (
-    EntityClassificationPredictor,
-)
+from papermage.predictors import EntityClassificationPredictor
 from papermage.types import Document, Entity, Span
 
 TEST_SCIBERT_WEIGHTS = "allenai/scibert_scivocab_uncased"

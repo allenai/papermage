@@ -20,9 +20,7 @@ from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from papermage.predictors.entity_classification_predictor import (
-    EntityClassificationPredictor,
-)
+from papermage.predictors import EntityClassificationPredictor
 from papermage.types import Box, Document, Entity, Span
 
 

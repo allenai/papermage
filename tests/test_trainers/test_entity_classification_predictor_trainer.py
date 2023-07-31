@@ -13,9 +13,7 @@ import torch
 import transformers
 
 from papermage.parsers import PDFPlumberParser
-from papermage.predictors.entity_classification_predictor import (
-    EntityClassificationPredictor,
-)
+from papermage.predictors import EntityClassificationPredictor
 from papermage.trainers.entity_classification_predictor_trainer import (
     EntityClassificationPredictorTrainer,
     EntityClassificationTrainConfig,
