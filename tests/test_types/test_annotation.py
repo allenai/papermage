@@ -40,6 +40,14 @@ class TestAnnotation(unittest.TestCase):
         a.doc = d
         self.assertIs(a.doc, d)
 
+        # protected setter
+        with self.assertRaises(AttributeError) as e:
+            a.doc = DummyDoc()
+
+        # detaches from Doc
+        a.doc = None
+        self.assertIsNone(a.doc)
+
     def test_id(self):
         a = Annotation()
 
