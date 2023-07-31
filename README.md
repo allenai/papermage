@@ -3,11 +3,16 @@
 ### Setup
 
 ```python
-conda create -n papermage python=3.8
+conda create -n papermage python=3.11
 conda activate papermage
 pip install -e '.[dev,predictors]'
+```
+
+If you're on MacOSX, you'll also want to run:
+```
 conda install poppler
 ```
+
 
 ## Unit testing
 ```bash
