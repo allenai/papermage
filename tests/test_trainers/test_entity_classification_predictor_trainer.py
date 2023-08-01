@@ -4,26 +4,23 @@
 
 """
 
-import unittest
-
 import json
+import unittest
 from pathlib import Path
 
 import springs
 import torch
 import transformers
 
-from papermage.types import Document, Entity, Span
 from papermage.parsers import PDFPlumberParser
-from papermage.predictors.hf_predictors.entity_classification_predictor import (
-    EntityClassificationPredictor
-)
+from papermage.predictors import EntityClassificationPredictor
 from papermage.trainers.entity_classification_predictor_trainer import (
     EntityClassificationPredictorTrainer,
     EntityClassificationTrainConfig,
 )
+from papermage.types import Document, Entity, Span
 
-TEST_SCIBERT_WEIGHTS = 'allenai/scibert_scivocab_uncased'
+TEST_SCIBERT_WEIGHTS = "allenai/scibert_scivocab_uncased"
 
 
 class TestEntityClassificationPredictorTrainer(unittest.TestCase):
@@ -39,23 +36,27 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
         ent1.id = 0
         ent2.id = 1
 
-
         self.predictor = EntityClassificationPredictor.from_pretrained(
             model_name_or_path=TEST_SCIBERT_WEIGHTS,
-            entity_name='tokens',
-            context_name='pages',
+            entity_name="tokens",
+            context_name="pages",
             num_labels=3,
             id2label={0: "O", 1: "B_Title", 2: "I_Title"},
             label2id={"O": 0, "B_Title": 1, "I_Title": 2},
         )
 
         config = springs.from_dataclass(EntityClassificationTrainConfig)
-        config = springs.merge(config, springs.from_dict({
-            'data_path': self.fixture_path / "predictor_training_docs_tiny.jsonl",
-            'label_field': "words_starting_with_td",
-            'max_steps': 1,
-            'seed': 407,
-        }))
+        config = springs.merge(
+            config,
+            springs.from_dict(
+                {
+                    "data_path": self.fixture_path / "predictor_training_docs_tiny.jsonl",
+                    "label_field": "words_starting_with_td",
+                    "max_steps": 1,
+                    "seed": 407,
+                }
+            ),
+        )
         self.trainer = EntityClassificationPredictorTrainer(
             predictor=self.predictor,
             config=config,
@@ -73,7 +74,7 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
         self.trainer.predictor.predictor.config.label2id = label2id
         self.trainer.train(
             docs_path=self.fixture_path / "predictor_training_docs_tiny.jsonl",
-            annotations_entity_names=["words_starting_with_td"]
+            annotations_entity_names=["words_starting_with_td"],
         )
 
         # check that the cache file exists
@@ -88,13 +89,20 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
             label2id=label2id,
         )
 
-        token_tags = new_predictor.predict(document=self.doc)
+        token_tags = new_predictor.predict(doc=self.doc)
         assert len(token_tags) == len([token for page in self.doc.pages for token in page.tokens])
 
-
     def test_preprocess(self):
-        self.trainer.predictor.predictor.config.id2label = {0: "O", 1: "B-words_starting_with_td", 2: "I-words_starting_with_td"}
-        self.trainer.predictor.predictor.config.label2id = {"O": 0, "B-words_starting_with_td": 1, "I-words_starting_with_td": 2}
+        self.trainer.predictor.predictor.config.id2label = {
+            0: "O",
+            1: "B-words_starting_with_td",
+            2: "I-words_starting_with_td",
+        }
+        self.trainer.predictor.predictor.config.label2id = {
+            "O": 0,
+            "B-words_starting_with_td": 1,
+            "I-words_starting_with_td": 2,
+        }
         preprocessed_batches = self.trainer.preprocess(
             docs_path=self.fixture_path / "predictor_training_docs_tiny.jsonl",
             labels_fields=["words_starting_with_td"],
@@ -106,8 +114,16 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
                 assert torch.allclose(gold_batch[key], test_batch[key])
 
         # test multi-word entities
-        self.trainer.predictor.predictor.config.id2label = {0: "O", 1: "B-multi_word_entity", 2: "I-multi_word_entity"}
-        self.trainer.predictor.predictor.config.label2id = {"O": 0, "B-multi_word_entity": 1, "I-multi_word_entity": 2}
+        self.trainer.predictor.predictor.config.id2label = {
+            0: "O",
+            1: "B-multi_word_entity",
+            2: "I-multi_word_entity",
+        }
+        self.trainer.predictor.predictor.config.label2id = {
+            "O": 0,
+            "B-multi_word_entity": 1,
+            "I-multi_word_entity": 2,
+        }
         preprocessed_batches_mwe = self.trainer.preprocess(
             docs_path=self.fixture_path / "predictor_training_docs_tiny.jsonl",
             labels_fields=["multi_word_entity"],
@@ -119,30 +135,40 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
 
         # test multiple fields
         id2label = {
-            0: "O", 1: "B-words_starting_with_td", 2: "I-words_starting_with_td",
-            3: "B-multi_word_entity", 4: "I-multi_word_entity",
+            0: "O",
+            1: "B-words_starting_with_td",
+            2: "I-words_starting_with_td",
+            3: "B-multi_word_entity",
+            4: "I-multi_word_entity",
         }
         label2id = {lab: id for id, lab in id2label.items()}
         self.trainer.predictor.predictor.config.id2label = id2label
         self.trainer.predictor.predictor.config.label2id = label2id
         preprocessed_batches_multifields = self.trainer.preprocess(
             docs_path=self.fixture_path / "predictor_training_docs_tiny.jsonl",
-            labels_fields=["words_starting_with_td", "multi_word_entity"]
+            labels_fields=["words_starting_with_td", "multi_word_entity"],
         )
         gold_preprocessed_batches_multifields = torch.load(
-            self.fixture_path / "preprocessed_training_docs_tiny_multifields.pt")
-        for gold_batch, test_batch in zip(
-            gold_preprocessed_batches_multifields, preprocessed_batches_multifields):
+            self.fixture_path / "preprocessed_training_docs_tiny_multifields.pt"
+        )
+        for gold_batch, test_batch in zip(gold_preprocessed_batches_multifields, preprocessed_batches_multifields):
             for key in set(gold_batch.keys()) | set(gold_batch.keys()):
                 assert torch.allclose(gold_batch[key], test_batch[key])
-
 
     def test_eval(self):
         if (self.trainer.CACHE_PATH / self.trainer.data_id / "test_inputs.pt").exists():
             (self.trainer.CACHE_PATH / self.trainer.data_id / "test_inputs.pt").unlink()
         transformers.set_seed(407)
-        self.trainer.predictor.predictor.config.id2label = {0: "O", 1: "B-multi_word_entity", 2: "I-multi_word_entity"}
-        self.trainer.predictor.predictor.config.label2id = {"O": 0, "B-multi_word_entity": 1, "I-multi_word_entity": 2}
+        self.trainer.predictor.predictor.config.id2label = {
+            0: "O",
+            1: "B-multi_word_entity",
+            2: "I-multi_word_entity",
+        }
+        self.trainer.predictor.predictor.config.label2id = {
+            "O": 0,
+            "B-multi_word_entity": 1,
+            "I-multi_word_entity": 2,
+        }
         self.trainer.eval(
             docs_path=self.fixture_path / "predictor_training_docs_tiny.jsonl",
             annotations_entity_names=["multi_word_entity"],
@@ -160,7 +186,6 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
 
         assert gold_results["y_gold"] == pred_results["y_gold"]
         assert gold_results["y_hat"] == pred_results["y_hat"]
-
 
     def save_and_load_checkpoint(self):
         pass

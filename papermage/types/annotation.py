@@ -30,10 +30,10 @@ class Annotation:
         return self._doc
 
     @doc.setter
-    def doc(self, doc: "Document") -> None:
+    def doc(self, doc: Optional["Document"]) -> None:
         """This method attaches a Document to this Annotation, allowing the Annotation
         to access things beyond itself within the Document (e.g. neighboring annotations)"""
-        if self.doc:
+        if self.doc and doc:
             raise AttributeError(
                 "Already has an attached Document. Since Annotations should be"
                 "specific to a given Document, we recommend creating a new"
@@ -64,7 +64,7 @@ class Annotation:
     @abstractmethod
     def from_json(cls, annotation_json: Union[Dict, List]) -> "Annotation":
         pass
-    
+
     def __getattr__(self, field: str) -> List["Annotation"]:
         """This method allows you to access overlapping Annotations within the Document"""
         if self.doc is None:

@@ -6,7 +6,7 @@ import inspect
 import json
 import os
 from pathlib import Path
-from typing import List, Optional, Union, Literal
+from typing import List, Literal, Optional, Union
 
 import pytorch_lightning as pl
 import seqeval.metrics
@@ -20,8 +20,9 @@ from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from papermage.types import Document, Entity, Span, Box
-from papermage.predictors.hf_predictors.entity_classification_predictor import EntityClassificationPredictor
+from papermage.predictors import EntityClassificationPredictor
+from papermage.types import Box, Document, Entity, Span
+
 
 class EntityClassificationPredictorWrapper(pl.LightningModule):
     def __init__(self, predictor: EntityClassificationPredictor):
@@ -41,7 +42,6 @@ class EntityClassificationPredictorWrapper(pl.LightningModule):
         pytorch_output = self.predictor.model(**batch)
         self.log("val_loss", pytorch_output.loss.cpu())
         return pytorch_output.loss
-
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.predictor.model.parameters(), lr=self.learning_rate)
@@ -85,14 +85,11 @@ class HFCheckpoint(pl.Callback):
 
 
 class EntityClassificationPredictorTrainer:
-
-    CACHE_PATH = Path(os.environ.get("PAPERMAGE_CACHE_DIR", 
-        Path.home() / ".cache/papermage"))
+    CACHE_PATH = Path(os.environ.get("PAPERMAGE_CACHE_DIR", Path.home() / ".cache/papermage"))
 
     def __init__(self, predictor: EntityClassificationPredictor, config: DictConfig):
         if not self.CACHE_PATH.exists():
             self.CACHE_PATH.mkdir(parents=True)
-
 
         transformers.set_seed(config.seed)
         self.predictor = EntityClassificationPredictorWrapper(predictor)
@@ -108,29 +105,33 @@ class EntityClassificationPredictorTrainer:
         if config.mode == "eval":
             # just extract the original model name from the path
             # assumes that the model path starts with self.CACHE_PATH
-            model_name = self.config.model_name_or_path[len(str(self.CACHE_PATH)):].strip("/").split("_")[0]
+            model_name = self.config.model_name_or_path[len(str(self.CACHE_PATH)) :].strip("/").split("_")[0]
         else:
             model_name = str(self.predictor.config.name_or_path).replace("/", "-")
 
-        self.data_id = "_".join([
-            model_name,
-            str(self.config.label_field),
-            str(self.predictor.entity_name),
-            str(self.predictor.context_name),
-            str(self.predictor.batch_size),
-        ])
+        self.data_id = "_".join(
+            [
+                model_name,
+                str(self.config.label_field),
+                str(self.predictor.entity_name),
+                str(self.predictor.context_name),
+                str(self.predictor.batch_size),
+            ]
+        )
 
         if self.config.data_notes:
             self.data_id += f"_{self.config.data_notes}"
         (self.CACHE_PATH / self.data_id).mkdir(exist_ok=True)
 
-        self.model_id = "_".join([
-            self.data_id,
-            str(self.config.learning_rate),
-            str(self.config.warmup_steps),
-            str(self.config.seed),
-            str(self.config.max_epochs),
-        ])
+        self.model_id = "_".join(
+            [
+                self.data_id,
+                str(self.config.learning_rate),
+                str(self.config.warmup_steps),
+                str(self.config.seed),
+                str(self.config.max_epochs),
+            ]
+        )
 
         if self.config.notes:
             self.model_id += "_" + self.config.notes
@@ -139,9 +140,7 @@ class EntityClassificationPredictorTrainer:
             self.config.default_root_dir = self.CACHE_PATH / self.model_id
         self.config.default_root_dir.mkdir(parents=True, exist_ok=True)
 
-        callbacks = [
-            HFCheckpoint(f"{self.config.default_root_dir}/checkpoints")
-        ]
+        callbacks = [HFCheckpoint(f"{self.config.default_root_dir}/checkpoints")]
 
         loggers = []
         if config.wandb:
@@ -160,12 +159,7 @@ class EntityClassificationPredictorTrainer:
         pl_trainer_params = inspect.signature(pl.Trainer).parameters
         pl_trainer_config = {k: v for k, v in dict(self.config).items() if k in pl_trainer_params}
 
-        self.trainer = pl.Trainer(
-            callbacks=callbacks,
-            logger=loggers,
-            **pl_trainer_config
-        )
-
+        self.trainer = pl.Trainer(callbacks=callbacks, logger=loggers, **pl_trainer_config)
 
     def compute_labels_from_entities(self, doc: Document, labels_fields: List[str], return_labels_by_entity=False):
         """
@@ -228,9 +222,9 @@ class EntityClassificationPredictorTrainer:
         else:
             return batches, label_id_batches
 
-
-    def preprocess(self, docs_path: Path, labels_fields: Optional[List[str]], annotations_path: Optional[Path] = None):
-
+    def preprocess(
+        self, docs_path: Path, labels_fields: Optional[List[str]], annotations_path: Optional[Path] = None
+    ):
         with open(docs_path, "r") as docs_file:
             all_pytorch_batches = []
 
@@ -242,13 +236,14 @@ class EntityClassificationPredictorTrainer:
 
                     pytorch_batches = [
                         self.predictor.python_to_torch_mapper.transform(
-                        data=self.predictor.list_collator_mapper.transform(
-                            data={
-                                self.predictor._HF_RESERVED_INPUT_IDS: batch.input_ids,
-                                self.predictor._HF_RESERVED_ATTN_MASK: batch.attention_mask,
-                                "labels": label_ids,
-                            }
-                        ))
+                            data=self.predictor.list_collator_mapper.transform(
+                                data={
+                                    self.predictor._HF_RESERVED_INPUT_IDS: batch.input_ids,
+                                    self.predictor._HF_RESERVED_ATTN_MASK: batch.attention_mask,
+                                    "labels": label_ids,
+                                }
+                            )
+                        )
                         for batch, label_ids in zip(batches, label_id_batches)
                     ]
 
@@ -256,8 +251,12 @@ class EntityClassificationPredictorTrainer:
 
             return all_pytorch_batches
 
-
-    def train(self, docs_path: Path, annotations_entity_names: Optional[List[str]] = None, annotations_path: Optional[Path] = None):
+    def train(
+        self,
+        docs_path: Path,
+        annotations_entity_names: Optional[List[str]] = None,
+        annotations_path: Optional[Path] = None,
+    ):
         # If pytorch tensors haven't been created and cached yet
         # preprocess the document to convert it to tensors and cache them
         preprocessed_batches = []
@@ -270,8 +269,8 @@ class EntityClassificationPredictorTrainer:
 
             print(f"Caching preprocessed batches in: {cache_file}")
             torch.save(preprocessed_batches, cache_file)
-            
-        else:    
+
+        else:
             # load the tensors from the cache
             print(f"Loading precomputed input batches from: {cache_file}")
             preprocessed_batches = torch.load(cache_file)
@@ -283,14 +282,12 @@ class EntityClassificationPredictorTrainer:
         # Run the training loop
         self._train(docs_dataloader)
 
-
     def _train(self, docs: DataLoader):
         # The module should automatically be put on the correct device, so I'm not sure why I need to do this.
         # set the number of training steps for the optimizer.
         self.predictor.num_training_steps = len(docs) * self.config.max_epochs
         self.predictor.model.to(self.device)
         self.trainer.fit(self.predictor, docs)
-
 
     def eval(self, docs_path: Path, annotations_entity_names: List[str]):
         """This is going to be a bit different from just calling `predict` on the predictor.
@@ -350,9 +347,7 @@ class EntityClassificationPredictorTrainer:
             extracted_text = []
             for annotation in annotations:
                 if annotation.metadata["label"] != "O":
-                    extracted_text.append(document.symbols[
-                        annotation.spans[0].start:\
-                        annotation.spans[0].end])
+                    extracted_text.append(document.symbols[annotation.spans[0].start : annotation.spans[0].end])
             all_extracted_text.append(extracted_text)
 
         # Calculate precision, recall, f1, accuracy at the span level and token level
@@ -366,9 +361,9 @@ class EntityClassificationPredictorTrainer:
         # (E.g. "B-Title"[:2] => "Title")
         clf_report_token = sklearn.metrics.classification_report(
             [gold_lab[2:] for gold_labels in all_gold_labels for gold_lab in gold_labels],
-            [pred_lab[2:] for pred_labels in all_pred_labels for pred_lab in pred_labels]
+            [pred_lab[2:] for pred_labels in all_pred_labels for pred_lab in pred_labels],
         )
-        
+
         (self.config.default_root_dir / "results").mkdir(exist_ok=True)
 
         with open(self.config.default_root_dir / "results" / "clf_report_token.txt", "w") as f:
@@ -379,14 +374,16 @@ class EntityClassificationPredictorTrainer:
 
         # breakpoint()
         with open(self.config.default_root_dir / "results" / "results.json", "w") as f:
-            json.dump({
-                "y_gold": all_gold_labels,
-                "y_hat": all_pred_labels,
-                "annotations": [[
-                    annotation.to_json()
-                    for annotation in annotations
-                ] for annotations in all_annotations]
-            }, f)
+            json.dump(
+                {
+                    "y_gold": all_gold_labels,
+                    "y_hat": all_pred_labels,
+                    "annotations": [
+                        [annotation.to_json() for annotation in annotations] for annotations in all_annotations
+                    ],
+                },
+                f,
+            )
 
         print("Token level prediction")
         print(clf_report_token)
@@ -398,6 +395,7 @@ class EntityClassificationPredictorTrainer:
 @springs.dataclass
 class EntityClassificationTrainConfig:
     """Stores the default training args"""
+
     data_path: Path  # Path to the data to train on. Should be a jsonl file where each row is a doc.
     label_field: str  # The field in the document to use as the labels for the tokens.
     # label_fields: List[str]  # The fields in the document to use as labels for the tokens.
@@ -417,9 +415,7 @@ class EntityClassificationTrainConfig:
     accelerator: str = "auto"
     accumulate_grad_batches: int = 1
     precision: Union[int, str] = 32
-    devices: Optional[Union[str, int]] = (
-        torch.cuda.device_count() if torch.cuda.is_available() else 1
-    )
+    devices: Optional[Union[str, int]] = torch.cuda.device_count() if torch.cuda.is_available() else 1
     max_epochs: int = 5
     max_steps: int = -1
     check_val_every_n_epoch: int = 1
@@ -446,11 +442,7 @@ def main(config: EntityClassificationTrainConfig):
     label2id = {v: k for k, v in id2label.items()}
     print(id2label)
     print(label2id)
-    kwargs = {
-        "num_labels": len(id2label),
-        "id2label": id2label,
-        "label2id": label2id
-    }
+    kwargs = {"num_labels": len(id2label), "id2label": id2label, "label2id": label2id}
 
     if "roberta" in config.model_name_or_path:
         kwargs["add_prefix_space"] = True
@@ -462,9 +454,9 @@ def main(config: EntityClassificationTrainConfig):
             model_name_or_path=config.model_name_or_path,
             entity_name=config.entity_name,
             context_name=config.context_name,
-            **kwargs
+            **kwargs,
         ),
-        config=config
+        config=config,
     )
 
     if config.mode == "train":
@@ -476,4 +468,4 @@ def main(config: EntityClassificationTrainConfig):
 
 
 if __name__ == "__main__":
-     main()
+    main()

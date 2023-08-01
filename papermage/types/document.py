@@ -7,14 +7,14 @@
 
 from typing import Dict, Iterable, List, Optional
 
-from papermage.types import Entity, Metadata, EntitySpanIndexer
+from papermage.types import Entity, EntitySpanIndexer, Metadata
 
 # document field names
-SymbolsFieldName = 'symbols'
-ImagesFieldName = 'images'
-MetadataFieldName = 'metadata'
-EntitiesFieldName = 'entities'
-RelationsFieldName = 'relations'
+SymbolsFieldName = "symbols"
+ImagesFieldName = "images"
+MetadataFieldName = "metadata"
+EntitiesFieldName = "entities"
+RelationsFieldName = "relations"
 
 PagesFieldName = "pages"
 TokensFieldName = "tokens"
@@ -22,15 +22,9 @@ RowsFieldName = "rows"
 
 
 class Document:
-    SPECIAL_FIELDS = [SymbolsFieldName,
-                      ImagesFieldName,
-                      MetadataFieldName,
-                      EntitiesFieldName,
-                      RelationsFieldName]
+    SPECIAL_FIELDS = [SymbolsFieldName, ImagesFieldName, MetadataFieldName, EntitiesFieldName, RelationsFieldName]
 
-    def __init__(self,
-                 symbols: str,
-                 metadata: Optional[Metadata] = None):
+    def __init__(self, symbols: str, metadata: Optional[Metadata] = None):
         self.symbols = symbols
         self.metadata = metadata if metadata else Metadata()
         self.__entity_span_indexers: Dict[str, EntitySpanIndexer] = {}
@@ -50,6 +44,9 @@ class Document:
         if field_name in dir(self):
             raise AssertionError(f"{field_name} clashes with Document class properties.")
 
+    def get_entity(self, field_name: str) -> List[Entity]:
+        return getattr(self, field_name)
+
     def annotate_entity(self, field_name: str, entities: List[Entity]) -> None:
         self.check_field_name_availability(field_name=field_name)
 
@@ -60,12 +57,21 @@ class Document:
         self.__entity_span_indexers[field_name] = EntitySpanIndexer(entities=entities)
 
     def remove_entity(self, field_name: str):
-
         for entity in getattr(self, field_name):
             entity.doc = None
 
         delattr(self, field_name)
         del self.__entity_span_indexers[field_name]
+
+    def get_relation(self, name: str) -> List["Relation"]:
+        raise NotImplementedError
+
+    def annotate_relation(self, name: str) -> None:
+        self.check_field_name_availability(field_name=name)
+        raise NotImplementedError
+
+    def remove_relation(self, name: str) -> None:
+        raise NotImplementedError
 
     def to_json(self, field_names: Optional[List[str]] = None) -> Dict:
         """Returns a dictionary that's suitable for serialization
@@ -85,16 +91,13 @@ class Document:
             SymbolsFieldName: self.symbols,
             MetadataFieldName: self.metadata.to_json(),
             EntitiesFieldName: {},
-            RelationsFieldName: {}
+            RelationsFieldName: {},
         }
 
         # 2) serialize each field to JSON
-        field_names = list(self.__entity_span_indexers.keys()) \
-            if field_names is None else field_names
+        field_names = list(self.__entity_span_indexers.keys()) if field_names is None else field_names
         for field_name in field_names:
-            doc_dict[EntitiesFieldName][field_name] = [
-                entity.to_json() for entity in getattr(self, field_name)
-            ]
+            doc_dict[EntitiesFieldName][field_name] = [entity.to_json() for entity in getattr(self, field_name)]
 
         return doc_dict
 
@@ -106,10 +109,7 @@ class Document:
 
         # 2) instantiate entities
         for field_name, entity_jsons in doc_json[EntitiesFieldName].items():
-            entities = [
-                Entity.from_json(entity_json=entity_json)
-                for entity_json in entity_jsons
-            ]
+            entities = [Entity.from_json(entity_json=entity_json) for entity_json in entity_jsons]
             doc.annotate_entity(field_name=field_name, entities=entities)
 
         return doc

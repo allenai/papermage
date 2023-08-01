@@ -1,6 +1,6 @@
 [project]
 name = 'papermage'
-version = '0.0.1'
+version = '0.1.0'
 description = 'Papermage. Casting magic over scientific PDFs.'
 license = {text = 'Apache-2.0'}
 readme = 'README.md'
@@ -86,6 +86,9 @@ dev = [
     'pytest-cov',
     'mypy>=0.971'
 ]
+visualizers = [
+    'layoutparser==0.3.4'
+]
 predictors = [
     'thefuzz[speedup]',
     'scikit-learn==1.1.2',
@@ -103,6 +106,7 @@ predictors = [
     'springs==1.12.3',
     'wandb==0.15.7',
     'seqeval==1.2.2',
+    'effdet==0.3.0'
 ]
 
 [tool.pytest.ini_options]
