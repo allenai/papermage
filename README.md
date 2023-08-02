@@ -3,9 +3,9 @@
 ### Setup
 
 ```python
-conda create -n papermage python=3.11
+conda create -n papermage python=3.9
 conda activate papermage
-pip install -e '.[dev,predictors]'
+pip install -e '.[dev,predictors,visualizers]'
 ```
 
 If you're on MacOSX, you'll also want to run:
