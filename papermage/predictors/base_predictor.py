@@ -44,5 +44,5 @@ class BasePredictor:
         return self._predict(doc=doc)
 
     @abstractmethod
-    def _predict(doc: Document) -> List[Annotation]:
+    def _predict(self, doc: Document) -> List[Annotation]:
         raise NotImplementedError

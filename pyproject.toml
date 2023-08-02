@@ -116,7 +116,7 @@ predictors = [
     'thefuzz[speedup]',
     'scikit-learn==1.1.2',
     'xgboost==1.6.2',
-    'spacy==3.3.1',
+    'spacy>=3.3.1',
     'pysbd==0.3.4',
     'tokenizers==0.13.1',
     'torch==1.12.1',
@@ -129,7 +129,8 @@ predictors = [
     'springs==1.12.3',
     'wandb==0.15.7',
     'seqeval==1.2.2',
-    'effdet==0.3.0'
+    'effdet==0.3.0',
+    'decontext==0.1.3',
 ]
 
 [tool.pytest.ini_options]
