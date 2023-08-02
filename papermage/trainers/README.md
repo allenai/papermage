@@ -1,4 +1,4 @@
-# Predictors
+# Trainers
 
 ## Training custom predictors (`entity_classification_predictor`)
 To train a custom predictor, first collect data and format it into a `Document` where one of the fields is the collected data.
@@ -66,6 +66,3 @@ trained_predictor = EntityClassificationPredictor.from_pretrained(
 
 token_tags = trained_predictor.predict(doc=doc)
 ```
-
-## GPT3 Predictors
-The `span_qa.predictor.py` file includes an example of using the `decontext` library to use GPT3 as a predictor. The example involves span-based classification: for example, a a user can highlight a span of text in a paper and ask a question about it. (The span is a field, and the question is metadata on the field.) The predictor runs retrieval over specified the specified units and feeds the question, context, and highlighted span to GPT3 to answer the question. See `tests/test_predictors/test_span_qa_predictor.py` for examples of how this predictor is instantiated and used.
