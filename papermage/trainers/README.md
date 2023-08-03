@@ -1,6 +1,6 @@
-# Predictors
+# Trainers
 
-## Training custom predictors
+## Training custom predictors (`entity_classification_predictor`)
 To train a custom predictor, first collect data and format it into a `Document` where one of the fields is the collected data.
 For example, let's say, we wanted to make a predictor that predicted if a word started with the letter "t" or "d". (Of course, it would be silly to train a classifier to do this, but this is just an example.)
 
@@ -41,7 +41,7 @@ doc_2 = Document.from_json({
 
 These should then be saved to a `jsonl` file with one document per line. (For example, see `tests/fixtures/predictor_training_docs_tiny.jsonl`).
 
-## Run the Trainer
+### Run the Trainer
 The trainer can be run at the command line with:
 ```bash
 python papermage/trainers/entity_classification_predictor_trainer.py data_path={path/to/data} label_field={field with the label} param1=value1 ...
@@ -51,7 +51,7 @@ where
 * `label_field` is the name of the field (e.g. `words_starting_with_td`)
 * `param`s are additional training parameters. They are explained in the `EntityClassificationTrainConfig` class in `papermage/trainers/entity_classification_predictor_trainer.py`. We use the pytorch-lightning [`Trainer`](https://lightning.ai/docs/pytorch/latest/api/lightning.pytorch.trainer.trainer.Trainer.html#lightning.pytorch.trainer.trainer.Trainer), so these parameters can be any keyword arguments to the class.
 
-## Loading the Predictor
+### Loading the Predictor
 By default, the model checkpoints are saved to a subdirectory of `$HOME/.cache/papermage`, but this can be changed by setting the envieronment variable `export PAPERMAGE_CACHE_DIR=path/to/cache` environment variable or by specifying the `default_root_dir` when training.
 The name of the subdirectory is computed based on the training arguments and is logged during training.
 

@@ -1,0 +1,4 @@
+# Predictors
+## `SpanQAPredictor` (Using GPT3 as a Predictor)
+
+The `span_qa.predictor.py` file includes an example of using the `decontext` library to use GPT3 as a predictor. The example involves span-based classification: for example, a a user can highlight a span of text in a paper and ask a question about it. (The span is a field, and the question is metadata on the field.) The predictor runs retrieval over specified the specified units and feeds the question, context, and highlighted span to GPT3 to answer the question. See `tests/test_predictors/test_span_qa_predictor.py` for examples of how this predictor is used.
