@@ -129,7 +129,7 @@ predictors = [
     'wandb==0.15.7',
     'seqeval==1.2.2',
     'effdet==0.3.0',
-    'decontext@git+https://github.com/bnewm0609/qa-decontextualization@support_py38',
+    'decontext==0.1.4',
 ]
 production = [
     'optimum[onnxruntime]==1.4.0'
