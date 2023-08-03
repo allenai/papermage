@@ -7,7 +7,7 @@
 
 from typing import Dict, Iterable, List, Optional
 
-from papermage.types import Entity, EntitySpanIndexer, Metadata
+from papermage.types import Entity, EntitySpanIndexer, Metadata, Image
 
 # document field names
 SymbolsFieldName = "symbols"
@@ -31,7 +31,7 @@ class Document:
 
     @property
     def fields(self) -> List[str]:
-        return list(self.__entity_span_indexers.keys())
+        return list(self.__entity_span_indexers.keys()) + self.SPECIAL_FIELDS
 
     def find_span_overlap_entities(self, query: Entity, field_name: str) -> List[Entity]:
         return self.__entity_span_indexers[field_name].find(query=query)
@@ -71,6 +71,25 @@ class Document:
         raise NotImplementedError
 
     def remove_relation(self, name: str) -> None:
+        raise NotImplementedError
+
+    def annotate_images(self, images: List[Image]) -> None:
+        if len(images) == 0:
+            raise ValueError("No images were provided")
+
+        image_types = {type(image) for image in images}
+        if len(image_types) > 1:
+            raise TypeError(f"Images contain multiple types: {image_types}")
+        image_type = image_types.pop()
+
+        if not issubclass(image_type, Image):
+            raise NotImplementedError(
+                f"Unsupported image type {image_type} for {ImagesFieldName}"
+            )
+
+        setattr(self, ImagesFieldName, images)
+
+    def remove_images(self) -> None:
         raise NotImplementedError
 
     def to_json(self, field_names: Optional[List[str]] = None) -> Dict:
