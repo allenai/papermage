@@ -44,7 +44,7 @@ class LayoutParserPredictor(BasePredictor):
         model_outputs: lp.Layout, 
         page_index: int,
         image: Image) -> List[Annotation]:
-        """Convert the model outputs into the mmda format
+        """Convert the model outputs into the papermage format
 
         Args:
             model_outputs (lp.Layout): 
@@ -53,13 +53,13 @@ class LayoutParserPredictor(BasePredictor):
             page_index (int): 
                 The index of the current page, used for creating the 
                 `Box` object
-            image (PIL.Image): 
+            image (Image):
                 The image of the current page, used for converting
                 to relative coordinates for the box objects
 
         Returns:
-            List[BoxGroup]: 
-            The detected layout stored in the BoxGroup format.
+            List[Annotation]:
+            The detected layout stored in a list of Entities.
         """
 
         # block.coordinates returns the left, top, bottom, right coordinates
@@ -86,15 +86,15 @@ class LayoutParserPredictor(BasePredictor):
         ]
 
     def _predict(self, doc: Document) -> List[Annotation]:
-        """Returns a list of Boxgroups for the detected layouts for all pages
+        """Returns a list of Entities for the detected layouts for all pages
 
         Args:
             document (Document): 
                 The input document object 
 
         Returns:
-            List[BoxGroup]: 
-                The returned Boxgroups for the detected layouts for all pages
+            List[Annotation]:
+                The returned Entities for the detected layouts for all pages
         """
         document_prediction = []
 
