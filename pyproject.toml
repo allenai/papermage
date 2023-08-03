@@ -116,7 +116,7 @@ predictors = [
     'thefuzz[speedup]',
     'scikit-learn==1.1.2',
     'xgboost==1.6.2',
-    'spacy>=3.3.1',
+    'spacy==3.4.1',
     'pysbd==0.3.4',
     'tokenizers==0.13.1',
     'torch==1.12.1',
