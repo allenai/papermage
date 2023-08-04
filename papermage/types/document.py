@@ -7,7 +7,7 @@
 
 from typing import Dict, Iterable, List, Optional
 
-from papermage.types import Entity, EntitySpanIndexer, Metadata
+from papermage.types import Entity, EntitySpanIndexer, Metadata, Image
 
 # document field names
 SymbolsFieldName = "symbols"
@@ -73,7 +73,26 @@ class Document:
     def remove_relation(self, name: str) -> None:
         raise NotImplementedError
 
-    def to_json(self, field_names: Optional[List[str]] = None) -> Dict:
+    def annotate_images(self, images: List[Image]) -> None:
+        if len(images) == 0:
+            raise ValueError("No images were provided")
+
+        image_types = {type(image) for image in images}
+        if len(image_types) > 1:
+            raise TypeError(f"Images contain multiple types: {image_types}")
+        image_type = image_types.pop()
+
+        if not issubclass(image_type, Image):
+            raise NotImplementedError(
+                f"Unsupported image type {image_type} for {ImagesFieldName}"
+            )
+
+        setattr(self, ImagesFieldName, images)
+
+    def remove_images(self) -> None:
+        raise NotImplementedError
+
+    def to_json(self, field_names: Optional[List[str]] = None, with_images: bool = False) -> Dict:
         """Returns a dictionary that's suitable for serialization
 
         Use `fields` to specify a subset of groups in the Document to include (e.g. 'sentences')
@@ -99,6 +118,10 @@ class Document:
         for field_name in field_names:
             doc_dict[EntitiesFieldName][field_name] = [entity.to_json() for entity in getattr(self, field_name)]
 
+        # 3) serialize images if `with_images == True`
+        if with_images:
+            doc_dict[ImagesFieldName] = [image.to_json() for image in getattr(self, ImagesFieldName)]
+        
         return doc_dict
 
     @classmethod
