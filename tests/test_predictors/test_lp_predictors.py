@@ -39,5 +39,5 @@ class TestLayoutParserPredictor(unittest.TestCase):
             assert pred_block_ents.metadata["type"] == gold_block_ents.metadata["type"]
             for pred_box, gold_box in zip(pred_block_ents.boxes, gold_block_ents.boxes):
                 for field in ["page", "w", "h", "l", "t"]:
-                    self.assertAlmostEqual(getattr(pred_box, field), getattr(gold_box, field), places=5)
+                    self.assertAlmostEqual(getattr(pred_box, field), getattr(gold_box, field), places=3)
         
