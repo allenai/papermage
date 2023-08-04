@@ -19,7 +19,7 @@ from smashed.interfaces.simple import (
 )
 
 from papermage.predictors.base_predictor import BasePredictor
-from papermage.types import Annotation, Document, Entity, Metadata, Span
+from papermage.types import Annotation, Document, Entity, Metadata, Span, Box
 
 
 class EntityClassificationBatch:
@@ -232,6 +232,19 @@ class HFEntityClassificationPredictor(BasePredictor):
             for batch_dict in batch_dicts
         ]
 
+    def combine_annotations(self, annotations: List[Entity]) -> Annotation:
+        # import pytest; pytest.set_trace()
+        label = annotations[0].metadata.label[2:] # remove the B-
+        scores = [annotation.metadata.score for annotation in annotations]
+        span = Span.create_enclosing_span([span for annotation in annotations for span in annotation.spans])
+        smaller_boxes = [box for annotation in annotations for box in annotation.boxes]
+        box = [Box.create_enclosing_box(smaller_boxes)] if smaller_boxes else []
+        return Entity(
+            spans=[span],
+            boxes=box,
+            metadata=Metadata(label=label, score=np.mean(scores)),
+        )
+
     def postprocess(
         self, doc: Document, context_name: str, preds: List[EntityClassificationPrediction]
     ) -> List[Annotation]:
@@ -249,6 +262,7 @@ class HFEntityClassificationPredictor(BasePredictor):
 
         # (2) iterate through original data to check against that Lookup
         annotations: List[Annotation] = []
+        field_annotations: List[Entity] = []
         for i, context in enumerate(getattr(doc, context_name)):
             for j, entity in enumerate(getattr(context, self.entity_name)):
                 pred: Optional[EntityClassificationPrediction] = context_id_to_entity_id_to_pred[i].get(j, None)
@@ -265,7 +279,24 @@ class HFEntityClassificationPredictor(BasePredictor):
                     boxes=entity.boxes,
                     metadata=new_metadata,
                 )
-                annotations.append(new_entity)
+
+                if new_entity.metadata.label.startswith("B"):
+                    # end the last annotation
+                    if field_annotations:
+                        annotations.append(self.combine_annotations(field_annotations))
+                    field_annotations = [new_entity]
+                elif new_entity.metadata.label == "O":
+                    # end the last annotation
+                    if field_annotations:
+                        annotations.append(self.combine_annotations(field_annotations))
+                    field_annotations = []
+                else:
+                    # Either "I", so we're in the same field or "None", so we're in the same word-piece
+                    field_annotations.append(new_entity)
+                # annotations.append(new_entity)
+        if field_annotations:
+            annotations.append(self.combine_annotations(field_annotations))
+
         return annotations
 
     def _predict(self, doc: Document) -> List[Annotation]:
