@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Union
 import layoutparser.elements as lpe
 import layoutparser.visualization as lpv
 
-from papermage.types import Entity, Image
+from papermage.magelib import Entity, Image
 
 
 def plot_entities_on_page(

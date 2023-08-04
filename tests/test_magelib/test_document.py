@@ -6,7 +6,7 @@
 
 import unittest
 
-from papermage.types import (
+from papermage.magelib import (
     Document,
     EntitiesFieldName,
     Entity,

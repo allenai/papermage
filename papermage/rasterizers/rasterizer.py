@@ -8,7 +8,7 @@ Converts pages of a PDF into Images that can be attached to a Document.
 
 from typing import Iterable, List, Protocol
 
-from papermage.types import Document, Image, PagesFieldName
+from papermage.magelib import Document, Image, PagesFieldName
 
 try:
     import pdf2image

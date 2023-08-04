@@ -8,9 +8,9 @@ import json
 import pathlib
 import unittest
 
+from papermage.magelib import Document, Entity, Span
 from papermage.parsers import PDFPlumberParser
-from papermage.predictors import HFEntityClassificationPredictor
-from papermage.types import Document, Entity, Span
+from papermage.predictors import HFBIOTaggerPredictor
 
 TEST_SCIBERT_WEIGHTS = "allenai/scibert_scivocab_uncased"
 
@@ -27,12 +27,12 @@ class TestEntityClassificationPredictor(unittest.TestCase):
         ent1.id = 0
         ent2.id = 1
 
-        self.predictor = HFEntityClassificationPredictor.from_pretrained(
+        self.predictor = HFBIOTaggerPredictor.from_pretrained(
             model_name_or_path=TEST_SCIBERT_WEIGHTS, entity_name="tokens", context_name="pages"
         )
 
     def test_predict_pages_tokens(self):
-        predictor = HFEntityClassificationPredictor.from_pretrained(
+        predictor = HFBIOTaggerPredictor.from_pretrained(
             model_name_or_path=TEST_SCIBERT_WEIGHTS, entity_name="tokens", context_name="pages"
         )
         token_tags = predictor.predict(doc=self.doc)
@@ -63,7 +63,7 @@ class TestEntityClassificationPredictor(unittest.TestCase):
         self.predictor.context_name = "pages"
 
     def test_predict_pages_tokens_roberta(self):
-        predictor = HFEntityClassificationPredictor.from_pretrained(
+        predictor = HFBIOTaggerPredictor.from_pretrained(
             model_name_or_path="roberta-base",
             entity_name="tokens",
             context_name="pages",

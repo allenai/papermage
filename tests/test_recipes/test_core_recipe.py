@@ -7,9 +7,9 @@
 import os
 import unittest
 
+from papermage.magelib import Document, Entity, Image
 from papermage.recipes import CoreRecipe
-from papermage.types import Entity, Document, Image
-from tests.test_recipes.core_recipe_fixtures import (
+from tests.test_recipes.core_recipe_fixtures import (  # SEGMENT_OF_WORD_JSONS,
     BASE64_PAGE_IMAGE,
     FIRST_3_BLOCKS_JSON,
     FIRST_5_ROWS_JSON,
@@ -17,7 +17,6 @@ from tests.test_recipes.core_recipe_fixtures import (
     FIRST_10_VILA_JSONS,
     FIRST_1000_SYMBOLS,
     PAGE_JSON,
-    # SEGMENT_OF_WORD_JSONS,
 )
 
 
@@ -41,9 +40,7 @@ def round_all_floats(d: dict):
 
 class TestCoreRecipe(unittest.TestCase):
     def setUp(self):
-        self.pdfpath = os.path.join(
-            os.path.dirname(__file__), "../fixtures/1903.10676.pdf"
-        )
+        self.pdfpath = os.path.join(os.path.dirname(__file__), "../fixtures/1903.10676.pdf")
         self.recipe = CoreRecipe()
         self.doc = self.recipe.from_path(pdfpath=self.pdfpath)
 
@@ -73,7 +70,6 @@ class TestCoreRecipe(unittest.TestCase):
         #     round_all_floats(SEGMENT_OF_WORD_JSONS),
         # )
 
-
     def test_manual_create_using_annotate(self):
         """
         This tests whether one can manually reconstruct a Document without using from_json().
@@ -84,19 +80,11 @@ class TestCoreRecipe(unittest.TestCase):
 
         doc2 = Document(symbols=doc_json["symbols"], metadata=doc_json["metadata"])
         assert doc2.symbols == doc_json["symbols"] == self.doc.symbols
-        assert (
-            doc2.metadata.to_json()
-            == doc_json["metadata"]
-            == self.doc.metadata.to_json()
-        )
+        assert doc2.metadata.to_json() == doc_json["metadata"] == self.doc.metadata.to_json()
 
         images = [Image.from_base64(img) for img in doc_json["images"]]
         doc2.annotate_images(images)
-        assert (
-            doc2.images[0].to_base64()
-            == doc_json["images"][0]
-            == self.doc.images[0].to_base64()
-        )
+        assert doc2.images[0].to_base64() == doc_json["images"][0] == self.doc.images[0].to_base64()
 
         rows = [Entity.from_json(entity_json=r) for r in doc_json["entities"]["rows"]]
         doc2.annotate_entity(field_name="rows", entities=rows)
@@ -106,9 +94,7 @@ class TestCoreRecipe(unittest.TestCase):
             == [r.to_json() for r in self.doc.rows]
         )
 
-        vila_entities = [
-            Entity.from_json(entity_json=v) for v in doc_json["entities"]["vila_entities"]
-        ]
+        vila_entities = [Entity.from_json(entity_json=v) for v in doc_json["entities"]["vila_entities"]]
         doc2.annotate_entity(field_name="vila_entities", entities=vila_entities)
         assert (
             [v.to_json() for v in doc2.vila_entities]

@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
-from papermage.types import Span
+from papermage.magelib import Span
 
 
 class Box:

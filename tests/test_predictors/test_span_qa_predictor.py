@@ -3,8 +3,8 @@ import os
 import pathlib
 import unittest
 
+from papermage.magelib import Document, Entity, Span
 from papermage.predictors.api_predictors.span_qa_predictor import APISpanQAPredictor
-from papermage.types import Document, Entity, Span
 
 
 class TestSpanQAPredictor(unittest.TestCase):

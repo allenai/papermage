@@ -3,8 +3,7 @@ from typing import Any, Dict, List, Optional, Union
 import layoutparser as lp
 from tqdm import tqdm
 
-from papermage.predictors.base_predictor import BasePredictor
-from papermage.types import (
+from papermage.magelib import (
     Annotation,
     Box,
     Document,
@@ -14,6 +13,7 @@ from papermage.types import (
     Metadata,
     PagesFieldName,
 )
+from papermage.predictors.base_predictor import BasePredictor
 
 
 class LPBlockPredictor(BasePredictor):

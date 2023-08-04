@@ -5,7 +5,8 @@
 """
 
 import unittest
-from papermage.types import Box
+
+from papermage.magelib import Box
 
 
 class TestBox(unittest.TestCase):

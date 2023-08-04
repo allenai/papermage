@@ -6,13 +6,13 @@
 """
 
 
+from abc import abstractmethod
 from typing import List
 
-from abc import abstractmethod
-
 import numpy as np
-from papermage.types import Entity, Annotation
 from ncls import NCLS
+
+from papermage.magelib import Annotation, Entity
 
 
 class Indexer:
@@ -53,9 +53,7 @@ class EntitySpanIndexer(Indexer):
 
         self._entities = entities
         self._index = NCLS(
-            np.array(starts, dtype=np.int32),
-            np.array(ends, dtype=np.int32),
-            np.array(ids, dtype=np.int32)
+            np.array(starts, dtype=np.int32), np.array(ends, dtype=np.int32), np.array(ids, dtype=np.int32)
         )
 
         self._ensure_disjoint()
@@ -69,13 +67,11 @@ class EntitySpanIndexer(Indexer):
             for span in entity.spans:
                 matches = [match for match in self._index.find_overlap(span.start, span.end)]
                 if len(matches) > 1:
-                    raise ValueError(
-                        f"Detected overlap with existing Entity(s) {matches} for {entity}"
-                    )
+                    raise ValueError(f"Detected overlap with existing Entity(s) {matches} for {entity}")
 
     def find(self, query: Entity) -> List[Entity]:
         if not isinstance(query, Entity):
-            raise ValueError(f'EntityIndexer only works with `query` that is Entity type')
+            raise ValueError(f"EntityIndexer only works with `query` that is Entity type")
 
         if not query.spans:
             return []
@@ -93,4 +89,3 @@ class EntitySpanIndexer(Indexer):
         # TODO: provide option to return matched span groups in same order as self._entities
         #   (the span groups the index was built with originally)
         return sorted(list(matched_entities))
-

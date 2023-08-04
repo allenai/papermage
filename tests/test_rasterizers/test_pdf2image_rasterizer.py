@@ -10,8 +10,8 @@ import pathlib
 import re
 import unittest
 
+from papermage.magelib import Document, Entity, Image, Span
 from papermage.rasterizers import PDF2ImageRasterizer
-from papermage.types import Document, Entity, Image, Span
 
 
 class TestPDF2ImageRasterizer(unittest.TestCase):

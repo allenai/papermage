@@ -5,7 +5,9 @@
 """
 
 import unittest
-from papermage.types import Entity, Span, Box, Metadata
+
+from papermage.magelib import Box, Entity, Metadata, Span
+
 
 class TestEntity(unittest.TestCase):
     def test_create_empty(self):
@@ -59,30 +61,34 @@ class TestEntity(unittest.TestCase):
 
         #  spans only
         entity = Entity(spans=spans)
-        self.assertEqual(entity.to_json(), {'spans': [[0, 1], [2, 3]]})
+        self.assertEqual(entity.to_json(), {"spans": [[0, 1], [2, 3]]})
         entity2 = Entity.from_json(entity.to_json())
         self.assertDictEqual(entity2.to_json(), entity.to_json())
 
         #  boxes only
         entity = Entity(boxes=boxes)
-        self.assertEqual(entity.to_json(),
-                         {'boxes': [[0.0, 0.0, 0.0, 0.0, 0], [1.0, 1.0, 1.0, 1.0, 1]]})
+        self.assertEqual(entity.to_json(), {"boxes": [[0.0, 0.0, 0.0, 0.0, 0], [1.0, 1.0, 1.0, 1.0, 1]]})
         entity2 = Entity.from_json(entity.to_json())
         self.assertDictEqual(entity2.to_json(), entity.to_json())
 
         # both
         entity = Entity(spans=spans, boxes=boxes)
-        self.assertEqual(entity.to_json(),
-                         {'spans': [[0, 1], [2, 3]],
-                          'boxes': [[0.0, 0.0, 0.0, 0.0, 0], [1.0, 1.0, 1.0, 1.0, 1]]})
+        self.assertEqual(
+            entity.to_json(),
+            {"spans": [[0, 1], [2, 3]], "boxes": [[0.0, 0.0, 0.0, 0.0, 0], [1.0, 1.0, 1.0, 1.0, 1]]},
+        )
         entity2 = Entity.from_json(entity.to_json())
         self.assertDictEqual(entity2.to_json(), entity.to_json())
 
         # incl metadata
         entity = Entity(spans=spans, boxes=boxes, metadata=metadata)
-        self.assertEqual(entity.to_json(),
-                         {'spans': [[0, 1], [2, 3]],
-                          'boxes': [[0.0, 0.0, 0.0, 0.0, 0], [1.0, 1.0, 1.0, 1.0, 1]],
-                          'metadata': {'x': 123, 'y': 456}})
+        self.assertEqual(
+            entity.to_json(),
+            {
+                "spans": [[0, 1], [2, 3]],
+                "boxes": [[0.0, 0.0, 0.0, 0.0, 0], [1.0, 1.0, 1.0, 1.0, 1]],
+                "metadata": {"x": 123, "y": 456},
+            },
+        )
         entity2 = Entity.from_json(entity.to_json())
         self.assertDictEqual(entity2.to_json(), entity.to_json())

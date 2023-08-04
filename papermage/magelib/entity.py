@@ -6,10 +6,10 @@ An annotated "unit" on a Document.
 
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
-from papermage.types import Annotation, Box, Image, Metadata, Span
+from papermage.magelib import Annotation, Box, Image, Metadata, Span
 
 if TYPE_CHECKING:
-    from papermage.types.document import Document
+    from papermage.magelib.document import Document
 
 
 class Entity(Annotation):

@@ -11,8 +11,7 @@ except:
     # pdfplumber <= 0.7.6
     import pdfplumber.utils as ppu
 
-from papermage.parsers.parser import Parser
-from papermage.types import (
+from papermage.magelib import (
     Box,
     Document,
     EntitiesFieldName,
@@ -24,6 +23,7 @@ from papermage.types import (
     SymbolsFieldName,
     TokensFieldName,
 )
+from papermage.parsers.parser import Parser
 
 _TOL = Union[int, float]
 

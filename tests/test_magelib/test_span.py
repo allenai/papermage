@@ -7,12 +7,12 @@
 
 
 import unittest
-from papermage.types import Span
-from papermage.types.span import MergeClusterSpans
+
+from papermage.magelib import Span
+from papermage.magelib.span import MergeClusterSpans
 
 
 class TestSpan(unittest.TestCase):
-
     def test_to_from_json(self):
         span = Span(start=0, end=0)
         self.assertEqual(span.to_json(), [0, 0])

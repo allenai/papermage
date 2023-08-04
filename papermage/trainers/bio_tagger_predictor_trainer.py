@@ -20,12 +20,12 @@ from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from papermage.predictors import HFEntityClassificationPredictor
-from papermage.types import Box, Document, Entity, Span
+from papermage.magelib import Box, Document, Entity, Span
+from papermage.predictors import HFBIOTaggerPredictor
 
 
-class EntityClassificationPredictorWrapper(pl.LightningModule):
-    def __init__(self, predictor: HFEntityClassificationPredictor):
+class HFBioTaggerPredictorWrapper(pl.LightningModule):
+    def __init__(self, predictor: HFBIOTaggerPredictor):
         super().__init__()
         self.predictor = predictor
         self.learning_rate = None  # this will be set by the trainer
@@ -84,15 +84,15 @@ class HFCheckpoint(pl.Callback):
         # del checkpoint["state_dict"]
 
 
-class EntityClassificationPredictorTrainer:
+class HFBIOTaggerPredictorTrainer:
     CACHE_PATH = Path(os.environ.get("PAPERMAGE_CACHE_DIR", Path.home() / ".cache/papermage"))
 
-    def __init__(self, predictor: HFEntityClassificationPredictor, config: DictConfig):
+    def __init__(self, predictor: HFBIOTaggerPredictor, config: DictConfig):
         if not self.CACHE_PATH.exists():
             self.CACHE_PATH.mkdir(parents=True)
 
         transformers.set_seed(config.seed)
-        self.predictor = EntityClassificationPredictorWrapper(predictor)
+        self.predictor = HFBioTaggerPredictorWrapper(predictor)
         self.predictor.learning_rate = config.learning_rate
         self.predictor.warmup_steps = config.warmup_steps
 
@@ -393,7 +393,7 @@ class EntityClassificationPredictorTrainer:
 
 
 @springs.dataclass
-class EntityClassificationTrainConfig:
+class HFBIOTaggerPredictorTrainConfig:
     """Stores the default training args"""
 
     data_path: Path  # Path to the data to train on. Should be a jsonl file where each row is a doc.
@@ -427,8 +427,8 @@ class EntityClassificationTrainConfig:
     overfit_batches: bool = False
 
 
-@springs.cli(EntityClassificationTrainConfig)
-def main(config: EntityClassificationTrainConfig):
+@springs.cli(HFBIOTaggerPredictorTrainConfig)
+def main(config: HFBIOTaggerPredictorTrainConfig):
     """Launch a training run.
 
     For now, the simplest way to do this is to just pass the data. We can abstract this later and add some way to
@@ -449,8 +449,8 @@ def main(config: EntityClassificationTrainConfig):
         # kwargs["max_position_embeddings"] = 512  # This is set to 514 for some reason...
 
     # Initialize the trainer
-    trainer = EntityClassificationPredictorTrainer(
-        predictor=HFEntityClassificationPredictor.from_pretrained(
+    trainer = HFBIOTaggerPredictorTrainer(
+        predictor=HFBIOTaggerPredictor.from_pretrained(
             model_name_or_path=config.model_name_or_path,
             entity_name=config.entity_name,
             context_name=config.context_name,

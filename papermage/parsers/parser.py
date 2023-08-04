@@ -9,7 +9,7 @@ Protocol for creating token streams from a document
 from abc import abstractmethod
 from typing import Protocol
 
-from papermage.types import Document
+from papermage.magelib import Document
 
 
 class Parser(Protocol):

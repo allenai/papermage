@@ -12,13 +12,13 @@ import springs
 import torch
 import transformers
 
+from papermage.magelib import Document, Entity, Span
 from papermage.parsers import PDFPlumberParser
-from papermage.predictors import HFEntityClassificationPredictor
-from papermage.trainers.entity_classification_predictor_trainer import (
-    EntityClassificationPredictorTrainer,
-    EntityClassificationTrainConfig,
+from papermage.predictors import HFBIOTaggerPredictor
+from papermage.trainers.bio_tagger_predictor_trainer import (
+    HFBIOTaggerPredictorTrainConfig,
+    HFBIOTaggerPredictorTrainer,
 )
-from papermage.types import Document, Entity, Span
 
 TEST_SCIBERT_WEIGHTS = "allenai/scibert_scivocab_uncased"
 
@@ -36,7 +36,7 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
         ent1.id = 0
         ent2.id = 1
 
-        self.predictor = HFEntityClassificationPredictor.from_pretrained(
+        self.predictor = HFBIOTaggerPredictor.from_pretrained(
             model_name_or_path=TEST_SCIBERT_WEIGHTS,
             entity_name="tokens",
             context_name="pages",
@@ -45,7 +45,7 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
             label2id={"O": 0, "B_Title": 1, "I_Title": 2},
         )
 
-        config = springs.from_dataclass(EntityClassificationTrainConfig)
+        config = springs.from_dataclass(HFBIOTaggerPredictorTrainConfig)
         config = springs.merge(
             config,
             springs.from_dict(
@@ -57,7 +57,7 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
                 }
             ),
         )
-        self.trainer = EntityClassificationPredictorTrainer(
+        self.trainer = HFBIOTaggerPredictorTrainer(
             predictor=self.predictor,
             config=config,
         )
@@ -81,7 +81,7 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
         assert (self.trainer.CACHE_PATH / self.trainer.data_id / "inputs.pt").exists()
 
         # check that we can load in the trained model and run it on the test doc (`self.doc`)
-        new_predictor = HFEntityClassificationPredictor.from_pretrained(
+        new_predictor = HFBIOTaggerPredictor.from_pretrained(
             model_name_or_path=self.trainer.config.default_root_dir / "checkpoints",
             entity_name=self.predictor.entity_name,
             context_name=self.predictor.context_name,

@@ -6,7 +6,7 @@
 
 import unittest
 
-from papermage.types import Annotation
+from papermage.magelib import Annotation
 
 
 class DummyAnnotation(Annotation):

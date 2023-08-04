@@ -18,11 +18,11 @@ from smashed.interfaces.simple import (
     UnpackingMapper,
 )
 
+from papermage.magelib import Annotation, Box, Document, Entity, Metadata, Span
 from papermage.predictors.base_predictor import BasePredictor
-from papermage.types import Annotation, Document, Entity, Metadata, Span, Box
 
 
-class EntityClassificationBatch:
+class BIOBatch:
     def __init__(
         self,
         input_ids: List[List[int]],
@@ -47,7 +47,7 @@ class EntityClassificationBatch:
         self.context_id = context_id
 
 
-class EntityClassificationPrediction:
+class BIOPrediction:
     def __init__(self, context_id: int, entity_id: int, label: str, score: float):
         self.context_id = context_id
         self.entity_id = entity_id
@@ -55,7 +55,7 @@ class EntityClassificationPrediction:
         self.score = score
 
 
-class HFEntityClassificationPredictor(BasePredictor):
+class HFBIOTaggerPredictor(BasePredictor):
     """
     This is a generic wrapper around Huggingface Token Classification models.
 
@@ -204,7 +204,7 @@ class HFEntityClassificationPredictor(BasePredictor):
     def REQUIRED_DOCUMENT_FIELDS(self) -> List[str]:
         return [self.context_name, self.entity_name]
 
-    def preprocess(self, doc: Document, context_name: str) -> List[EntityClassificationBatch]:
+    def preprocess(self, doc: Document, context_name: str) -> List[BIOBatch]:
         """Processes document into whatever makes sense for the Huggingface model"""
         # (1) get it into a dictionary format that Smashed expects
 
@@ -223,7 +223,7 @@ class HFEntityClassificationPredictor(BasePredictor):
         return [
             # slightly annoying, but the names `input_ids`, `attention_mask` and `word_ids` are
             # reserved and produced after tokenization, which is why hard-coded here.
-            EntityClassificationBatch(
+            BIOBatch(
                 input_ids=batch_dict[self._HF_RESERVED_INPUT_IDS],
                 attention_mask=batch_dict[self._HF_RESERVED_ATTN_MASK],
                 entity_ids=batch_dict[self._HF_RESERVED_WORD_IDS],
@@ -234,7 +234,7 @@ class HFEntityClassificationPredictor(BasePredictor):
 
     def combine_annotations(self, annotations: List[Entity]) -> Annotation:
         # import pytest; pytest.set_trace()
-        label = annotations[0].metadata.label[2:] # remove the B-
+        label = annotations[0].metadata.label[2:]  # remove the B-
         scores = [annotation.metadata.score for annotation in annotations]
         span = Span.create_enclosing_span([span for annotation in annotations for span in annotation.spans])
         smaller_boxes = [box for annotation in annotations for box in annotation.boxes]
@@ -245,9 +245,7 @@ class HFEntityClassificationPredictor(BasePredictor):
             metadata=Metadata(label=label, score=np.mean(scores)),
         )
 
-    def postprocess(
-        self, doc: Document, context_name: str, preds: List[EntityClassificationPrediction]
-    ) -> List[Annotation]:
+    def postprocess(self, doc: Document, context_name: str, preds: List[BIOPrediction]) -> List[Annotation]:
         """This function handles a bunch of nonsense that happens with Huggingface models &
         how we processed the data.  Namely:
 
@@ -256,7 +254,7 @@ class HFEntityClassificationPredictor(BasePredictor):
         with the original input SpanGroups to make sure they all got classified.
         """
         # (1) organize predictions into a Lookup at the (Context, SpanGroup) level.
-        context_id_to_entity_id_to_pred: Dict[int, Dict[int, EntityClassificationPrediction]] = defaultdict(dict)
+        context_id_to_entity_id_to_pred: Dict[int, Dict[int, BIOPrediction]] = defaultdict(dict)
         for prediction in preds:
             context_id_to_entity_id_to_pred[prediction.context_id][prediction.entity_id] = prediction
 
@@ -265,7 +263,7 @@ class HFEntityClassificationPredictor(BasePredictor):
         field_annotations: List[Entity] = []
         for i, context in enumerate(getattr(doc, context_name)):
             for j, entity in enumerate(getattr(context, self.entity_name)):
-                pred: Optional[EntityClassificationPrediction] = context_id_to_entity_id_to_pred[i].get(j, None)
+                pred: Optional[BIOPrediction] = context_id_to_entity_id_to_pred[i].get(j, None)
                 # TODO: double-check whether this deepcopy is needed...
                 new_metadata = Metadata.from_json(entity.metadata.to_json())
                 if pred is not None:
@@ -301,10 +299,10 @@ class HFEntityClassificationPredictor(BasePredictor):
 
     def _predict(self, doc: Document) -> List[Annotation]:
         # (1) Make batches
-        batches: List[EntityClassificationBatch] = self.preprocess(doc=doc, context_name=self.context_name)
+        batches: List[BIOBatch] = self.preprocess(doc=doc, context_name=self.context_name)
 
         # (2) Predict each batch.
-        preds: List[EntityClassificationPrediction] = []
+        preds: List[BIOPrediction] = []
         for batch in batches:
             for pred in self._predict_batch(batch=batch):
                 preds.append(pred)
@@ -315,9 +313,9 @@ class HFEntityClassificationPredictor(BasePredictor):
 
     def _predict_batch(
         self,
-        batch: EntityClassificationBatch,
+        batch: BIOBatch,
         device: str = "cpu",
-    ) -> List[EntityClassificationPrediction]:
+    ) -> List[BIOPrediction]:
         #
         #   preprocessing!!  (padding & tensorification)
         #
@@ -356,7 +354,7 @@ class HFEntityClassificationPredictor(BasePredictor):
                     continue
                 else:
                     label_id = np.argmax(token_scores)
-                    pred = EntityClassificationPrediction(
+                    pred = BIOPrediction(
                         context_id=context_id,
                         entity_id=word_id,
                         label=self.config.id2label[label_id],

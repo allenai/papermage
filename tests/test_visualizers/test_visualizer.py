@@ -12,9 +12,9 @@ import unittest
 
 import numpy as np
 
+from papermage.magelib import Box, Document, Entity, Span
 from papermage.parsers import PDFPlumberParser
 from papermage.rasterizers import PDF2ImageRasterizer
-from papermage.types import Box, Document, Entity, Span
 
 
 class TestVisualizer(unittest.TestCase):
@@ -25,9 +25,7 @@ class TestVisualizer(unittest.TestCase):
             self.doc = Document.from_json(doc_dict)
 
         rasterizer = PDF2ImageRasterizer()
-        images = rasterizer.rasterize(
-            input_pdf_path=str(self.fixture_path / "2304.02623v1.pdf"), dpi=72
-        )
+        images = rasterizer.rasterize(input_pdf_path=str(self.fixture_path / "2304.02623v1.pdf"), dpi=72)
         rasterizer.attach_images(images=images, doc=self.doc)
         page = self.doc.pages[0]
         page_image = page.images[0]

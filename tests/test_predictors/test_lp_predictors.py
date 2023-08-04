@@ -2,10 +2,10 @@ import json
 import pathlib
 import unittest
 
+from papermage.magelib import Entity
 from papermage.parsers import PDFPlumberParser
 from papermage.predictors.lp_predictors.block_predictor import LPBlockPredictor
 from papermage.rasterizers import PDF2ImageRasterizer
-from papermage.types import Entity
 
 
 class TestLayoutParserPredictor(unittest.TestCase):

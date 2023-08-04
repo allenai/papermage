@@ -9,8 +9,8 @@ from decontext.data_types import (
 )
 from decontext.step.qa import TemplateRetrievalQAStep
 
+from papermage.magelib import Annotation, Document
 from papermage.predictors.base_predictor import BasePredictor
-from papermage.types import Annotation, Document
 
 
 class APISpanQAPredictor(BasePredictor):

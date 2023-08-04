@@ -4,7 +4,7 @@
 
 from abc import abstractmethod
 
-from papermage.types import Document
+from papermage.magelib import Document
 
 
 class Recipe:

@@ -8,11 +8,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+from papermage.magelib import Document, Entity
 from papermage.parsers.pdfplumber_parser import PDFPlumberParser
-from papermage.predictors import HFEntityClassificationPredictor, LPBlockPredictor
+from papermage.predictors import HFBIOTaggerPredictor, LPBlockPredictor
 from papermage.rasterizers.rasterizer import PDF2ImageRasterizer
 from papermage.recipes.recipe import Recipe
-from papermage.types import Document, Entity
 
 
 class CoreRecipe(Recipe):
@@ -28,7 +28,7 @@ class CoreRecipe(Recipe):
 
         self.effdet_publaynet_predictor = LPBlockPredictor.from_pretrained(effdet_publaynet_predictor_path)
         self.effdet_mfd_predictor = LPBlockPredictor.from_pretrained(effdet_mfd_predictor_path)
-        self.vila_predictor = HFEntityClassificationPredictor.from_pretrained(
+        self.vila_predictor = HFBIOTaggerPredictor.from_pretrained(
             vila_predictor_path,
             entity_name="tokens",
             context_name="pages",

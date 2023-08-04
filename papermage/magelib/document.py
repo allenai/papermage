@@ -7,7 +7,7 @@
 
 from typing import Dict, Iterable, List, Optional
 
-from papermage.types import Entity, EntitySpanIndexer, Image, Metadata
+from papermage.magelib import Entity, EntitySpanIndexer, Image, Metadata
 
 # document field names
 SymbolsFieldName = "symbols"

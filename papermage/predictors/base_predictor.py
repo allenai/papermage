@@ -9,7 +9,7 @@ Base class for Predictors.
 from abc import abstractmethod
 from typing import Any, Dict, List, Union
 
-from papermage.types import Annotation, Document
+from papermage.magelib import Annotation, Document
 
 
 class BasePredictor:

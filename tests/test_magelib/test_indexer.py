@@ -6,7 +6,7 @@
 
 import unittest
 
-from papermage.types import Entity, Span, EntitySpanIndexer, Document
+from papermage.magelib import Document, Entity, EntitySpanIndexer, Span
 
 
 class TestEntitySpanIndexer(unittest.TestCase):
@@ -20,10 +20,7 @@ class TestEntitySpanIndexer(unittest.TestCase):
             EntitySpanIndexer(entities=entities)
 
     def test_overlap_between_entities_fails_checks(self):
-        entities = [
-            Entity(spans=[Span(0, 5), Span(5, 8)]),
-            Entity(spans=[Span(6, 10)])
-        ]
+        entities = [Entity(spans=[Span(0, 5), Span(5, 8)]), Entity(spans=[Span(6, 10)])]
 
         with self.assertRaises(ValueError):
             EntitySpanIndexer(entities)
@@ -32,7 +29,7 @@ class TestEntitySpanIndexer(unittest.TestCase):
         entities_to_index = [
             Entity(spans=[Span(0, 5), Span(5, 8)]),
             Entity(spans=[Span(9, 10)]),
-            Entity(spans=[Span(100, 105)])
+            Entity(spans=[Span(100, 105)]),
         ]
 
         index = EntitySpanIndexer(entities_to_index)
@@ -48,9 +45,9 @@ class TestEntitySpanIndexer(unittest.TestCase):
         entities_to_index = [
             Entity(spans=[Span(100, 105)]),
             Entity(spans=[Span(9, 10)]),
-            Entity(spans=[Span(0, 5), Span(5, 8)])
+            Entity(spans=[Span(0, 5), Span(5, 8)]),
         ]
-        
+
         for i, entity in enumerate(entities_to_index):
             entity.doc = Document(symbols="test")
             entity.id = i
