@@ -26,7 +26,7 @@ class TestVisualizer(unittest.TestCase):
 
         rasterizer = PDF2ImageRasterizer()
         images = rasterizer.rasterize(
-            input_pdf_path="/Users/kylel/ai2/papermage/tests/fixtures/2304.02623v1.pdf", dpi=72
+            input_pdf_path=str(self.fixture_path / "2304.02623v1.pdf"), dpi=72
         )
         rasterizer.attach_images(images=images, doc=self.doc)
         page = self.doc.pages[0]

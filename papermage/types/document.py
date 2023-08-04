@@ -7,7 +7,7 @@
 
 from typing import Dict, Iterable, List, Optional
 
-from papermage.types import Entity, EntitySpanIndexer, Metadata, Image
+from papermage.types import Entity, EntitySpanIndexer, Image, Metadata
 
 # document field names
 SymbolsFieldName = "symbols"
@@ -83,16 +83,14 @@ class Document:
         image_type = image_types.pop()
 
         if not issubclass(image_type, Image):
-            raise NotImplementedError(
-                f"Unsupported image type {image_type} for {ImagesFieldName}"
-            )
+            raise NotImplementedError(f"Unsupported image type {image_type} for {ImagesFieldName}")
 
         setattr(self, ImagesFieldName, images)
 
     def remove_images(self) -> None:
         raise NotImplementedError
 
-    def to_json(self, field_names: Optional[List[str]] = None) -> Dict:
+    def to_json(self, field_names: Optional[List[str]] = None, with_images: bool = False) -> Dict:
         """Returns a dictionary that's suitable for serialization
 
         Use `fields` to specify a subset of groups in the Document to include (e.g. 'sentences')
@@ -117,6 +115,10 @@ class Document:
         field_names = list(self.__entity_span_indexers.keys()) if field_names is None else field_names
         for field_name in field_names:
             doc_dict[EntitiesFieldName][field_name] = [entity.to_json() for entity in getattr(self, field_name)]
+
+        # 3) serialize images if `with_images == True`
+        if with_images:
+            doc_dict[ImagesFieldName] = [image.to_json() for image in getattr(self, ImagesFieldName)]
 
         return doc_dict
 
