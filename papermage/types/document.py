@@ -92,7 +92,7 @@ class Document:
     def remove_images(self) -> None:
         raise NotImplementedError
 
-    def to_json(self, field_names: Optional[List[str]] = None) -> Dict:
+    def to_json(self, field_names: Optional[List[str]] = None, with_images: bool = False) -> Dict:
         """Returns a dictionary that's suitable for serialization
 
         Use `fields` to specify a subset of groups in the Document to include (e.g. 'sentences')
@@ -118,6 +118,10 @@ class Document:
         for field_name in field_names:
             doc_dict[EntitiesFieldName][field_name] = [entity.to_json() for entity in getattr(self, field_name)]
 
+        # 3) serialize images if `with_images == True`
+        if with_images:
+            doc_dict[ImagesFieldName] = [image.to_base64() for image in getattr(self, ImagesFieldName)]
+        
         return doc_dict
 
     @classmethod
