@@ -1,13 +1,22 @@
-from typing import Union, List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional, Union
 
-from tqdm import tqdm
 import layoutparser as lp
+from tqdm import tqdm
 
-from papermage.types import Annotation, Box, Document, Entity, Image, Metadata, ImagesFieldName, PagesFieldName
 from papermage.predictors.base_predictor import BasePredictor
+from papermage.types import (
+    Annotation,
+    Box,
+    Document,
+    Entity,
+    Image,
+    ImagesFieldName,
+    Metadata,
+    PagesFieldName,
+)
 
 
-class LayoutParserPredictor(BasePredictor):
+class LPBlockPredictor(BasePredictor):
     REQUIRED_BACKENDS = ["layoutparser"]
     REQUIRED_DOCUMENT_FIELDS = [PagesFieldName, ImagesFieldName]
 
@@ -40,18 +49,15 @@ class LayoutParserPredictor(BasePredictor):
 
         return cls(model)
 
-    def postprocess(self, 
-        model_outputs: lp.Layout, 
-        page_index: int,
-        image: Image) -> List[Annotation]:
+    def postprocess(self, model_outputs: lp.Layout, page_index: int, image: Image) -> List[Annotation]:
         """Convert the model outputs into the papermage format
 
         Args:
-            model_outputs (lp.Layout): 
-                The layout detection results from layoutparser for 
+            model_outputs (lp.Layout):
+                The layout detection results from layoutparser for
                 a page image
-            page_index (int): 
-                The index of the current page, used for creating the 
+            page_index (int):
+                The index of the current page, used for creating the
                 `Box` object
             image (Image):
                 The image of the current page, used for converting
@@ -80,7 +86,7 @@ class LayoutParserPredictor(BasePredictor):
                         page_height=page_height,
                     )
                 ],
-                metadata=Metadata(type=block.type)
+                metadata=Metadata(type=block.type),
             )
             for block in model_outputs
         ]
@@ -89,8 +95,8 @@ class LayoutParserPredictor(BasePredictor):
         """Returns a list of Entities for the detected layouts for all pages
 
         Args:
-            document (Document): 
-                The input document object 
+            document (Document):
+                The input document object
 
         Returns:
             List[Annotation]:
@@ -101,8 +107,6 @@ class LayoutParserPredictor(BasePredictor):
         images = doc.get_entity(field_name=ImagesFieldName)
         for image_index, image in enumerate(tqdm(images)):
             model_outputs = self.model.detect(image.pilimage)
-            document_prediction.extend(
-                self.postprocess(model_outputs, image_index, image)
-            )
+            document_prediction.extend(self.postprocess(model_outputs, image_index, image))
 
         return document_prediction

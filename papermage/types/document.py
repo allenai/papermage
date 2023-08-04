@@ -7,7 +7,7 @@
 
 from typing import Dict, Iterable, List, Optional
 
-from papermage.types import Entity, EntitySpanIndexer, Metadata, Image
+from papermage.types import Entity, EntitySpanIndexer, Image, Metadata
 
 # document field names
 SymbolsFieldName = "symbols"
@@ -83,9 +83,7 @@ class Document:
         image_type = image_types.pop()
 
         if not issubclass(image_type, Image):
-            raise NotImplementedError(
-                f"Unsupported image type {image_type} for {ImagesFieldName}"
-            )
+            raise NotImplementedError(f"Unsupported image type {image_type} for {ImagesFieldName}")
 
         setattr(self, ImagesFieldName, images)
 
@@ -121,7 +119,7 @@ class Document:
         # 3) serialize images if `with_images == True`
         if with_images:
             doc_dict[ImagesFieldName] = [image.to_base64() for image in getattr(self, ImagesFieldName)]
-        
+
         return doc_dict
 
     @classmethod

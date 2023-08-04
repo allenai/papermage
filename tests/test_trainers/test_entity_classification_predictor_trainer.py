@@ -13,7 +13,7 @@ import torch
 import transformers
 
 from papermage.parsers import PDFPlumberParser
-from papermage.predictors import EntityClassificationPredictor
+from papermage.predictors import HFEntityClassificationPredictor
 from papermage.trainers.entity_classification_predictor_trainer import (
     EntityClassificationPredictorTrainer,
     EntityClassificationTrainConfig,
@@ -36,7 +36,7 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
         ent1.id = 0
         ent2.id = 1
 
-        self.predictor = EntityClassificationPredictor.from_pretrained(
+        self.predictor = HFEntityClassificationPredictor.from_pretrained(
             model_name_or_path=TEST_SCIBERT_WEIGHTS,
             entity_name="tokens",
             context_name="pages",
@@ -81,7 +81,7 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
         assert (self.trainer.CACHE_PATH / self.trainer.data_id / "inputs.pt").exists()
 
         # check that we can load in the trained model and run it on the test doc (`self.doc`)
-        new_predictor = EntityClassificationPredictor.from_pretrained(
+        new_predictor = HFEntityClassificationPredictor.from_pretrained(
             model_name_or_path=self.trainer.config.default_root_dir / "checkpoints",
             entity_name=self.predictor.entity_name,
             context_name=self.predictor.context_name,

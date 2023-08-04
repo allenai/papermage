@@ -20,12 +20,12 @@ from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from papermage.predictors import EntityClassificationPredictor
+from papermage.predictors import HFEntityClassificationPredictor
 from papermage.types import Box, Document, Entity, Span
 
 
 class EntityClassificationPredictorWrapper(pl.LightningModule):
-    def __init__(self, predictor: EntityClassificationPredictor):
+    def __init__(self, predictor: HFEntityClassificationPredictor):
         super().__init__()
         self.predictor = predictor
         self.learning_rate = None  # this will be set by the trainer
@@ -87,7 +87,7 @@ class HFCheckpoint(pl.Callback):
 class EntityClassificationPredictorTrainer:
     CACHE_PATH = Path(os.environ.get("PAPERMAGE_CACHE_DIR", Path.home() / ".cache/papermage"))
 
-    def __init__(self, predictor: EntityClassificationPredictor, config: DictConfig):
+    def __init__(self, predictor: HFEntityClassificationPredictor, config: DictConfig):
         if not self.CACHE_PATH.exists():
             self.CACHE_PATH.mkdir(parents=True)
 
@@ -450,7 +450,7 @@ def main(config: EntityClassificationTrainConfig):
 
     # Initialize the trainer
     trainer = EntityClassificationPredictorTrainer(
-        predictor=EntityClassificationPredictor.from_pretrained(
+        predictor=HFEntityClassificationPredictor.from_pretrained(
             model_name_or_path=config.model_name_or_path,
             entity_name=config.entity_name,
             context_name=config.context_name,

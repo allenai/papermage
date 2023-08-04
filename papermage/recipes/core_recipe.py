@@ -1,5 +1,7 @@
 """
+
 @kylel
+
 """
 
 import logging
@@ -7,10 +9,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from papermage.parsers.pdfplumber_parser import PDFPlumberParser
-from papermage.predictors.entity_classification_predictor import (
-    EntityClassificationPredictor,
-)
-from papermage.predictors.lp_predictors import LayoutParserPredictor
+from papermage.predictors import HFEntityClassificationPredictor, LPBlockPredictor
 from papermage.rasterizers.rasterizer import PDF2ImageRasterizer
 from papermage.recipes.recipe import Recipe
 from papermage.types import Document, Entity
@@ -27,13 +26,9 @@ class CoreRecipe(Recipe):
         self.parser = PDFPlumberParser()
         self.rasterizer = PDF2ImageRasterizer()
 
-        self.effdet_publaynet_predictor = LayoutParserPredictor.from_pretrained(
-            effdet_publaynet_predictor_path
-        )
-        self.effdet_mfd_predictor = LayoutParserPredictor.from_pretrained(
-            effdet_mfd_predictor_path
-        )
-        self.vila_predictor = EntityClassificationPredictor.from_pretrained(
+        self.effdet_publaynet_predictor = LPBlockPredictor.from_pretrained(effdet_publaynet_predictor_path)
+        self.effdet_mfd_predictor = LPBlockPredictor.from_pretrained(effdet_mfd_predictor_path)
+        self.vila_predictor = HFEntityClassificationPredictor.from_pretrained(
             vila_predictor_path,
             entity_name="tokens",
             context_name="pages",
@@ -49,7 +44,7 @@ class CoreRecipe(Recipe):
         doc.annotate_images(images=list(images))
 
         logger.info("Predicting blocks...")
-        
+
         layout = self.effdet_publaynet_predictor.predict(doc=doc)
         equations = self.effdet_mfd_predictor.predict(doc=doc)
 

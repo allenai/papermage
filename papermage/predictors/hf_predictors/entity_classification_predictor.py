@@ -55,7 +55,7 @@ class EntityClassificationPrediction:
         self.score = score
 
 
-class EntityClassificationPredictor(BasePredictor):
+class HFEntityClassificationPredictor(BasePredictor):
     """
     This is a generic wrapper around Huggingface Token Classification models.
 
