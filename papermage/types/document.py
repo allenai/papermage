@@ -31,7 +31,7 @@ class Document:
 
     @property
     def fields(self) -> List[str]:
-        return list(self.__entity_span_indexers.keys())
+        return list(self.__entity_span_indexers.keys()) + self.SPECIAL_FIELDS
 
     def find_span_overlap_entities(self, query: Entity, field_name: str) -> List[Entity]:
         return self.__entity_span_indexers[field_name].find(query=query)

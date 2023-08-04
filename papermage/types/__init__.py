@@ -15,6 +15,7 @@ from papermage.types.entity import Entity
 from papermage.types.indexer import EntitySpanIndexer
 from papermage.types.document import Document
 from papermage.types.document import (
+    ImagesFieldName,
     MetadataFieldName, 
     EntitiesFieldName, 
     SymbolsFieldName,
@@ -35,6 +36,7 @@ __all__ = [
     'Image',
     'Metadata',
     'EntitySpanIndexer',
+    'ImageFieldName',
     'SymbolsFieldName',
     'MetadataFieldName',
     'EntitiesFieldName',
