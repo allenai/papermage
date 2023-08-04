@@ -118,7 +118,7 @@ class Document:
 
         # 3) serialize images if `with_images == True`
         if with_images:
-            doc_dict[ImagesFieldName] = [image.to_json() for image in getattr(self, ImagesFieldName)]
+            doc_dict[ImagesFieldName] = [image.to_base64() for image in getattr(self, ImagesFieldName)]
 
         return doc_dict
 
