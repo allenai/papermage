@@ -22,7 +22,8 @@ from papermage.magelib.document import (
     RelationsFieldName, 
     PagesFieldName, 
     TokensFieldName, 
-    RowsFieldName
+    RowsFieldName,
+    ImagesFieldName
 )
 
 __all__ = [
