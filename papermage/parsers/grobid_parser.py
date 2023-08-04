@@ -118,7 +118,7 @@ class GrobidFullParser(Parser):
             # # note for if/when adding in relations between mention sources and
             # # bib targets: big_entries metadata contains original grobid id
             # # attached to the Annotation.
-            doc.annotate_entity(**{field: box_groups})
+            doc.annotate_entity(field_name=field, entities=box_groups)
 
         return doc
 
