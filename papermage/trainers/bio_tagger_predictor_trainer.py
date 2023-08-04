@@ -251,20 +251,14 @@ class HFBIOTaggerPredictorTrainer:
 
             return all_pytorch_batches
 
-    def train(
-        self,
-        docs_path: Path,
-        annotations_entity_names: Optional[List[str]] = None,
-        annotations_path: Optional[Path] = None,
-    ):
+    def load_docs_from_path(self, docs_path: Path, annotations_entity_names: Optional[List[str]] = None, prefix: str ="") -> DataLoader:
         # If pytorch tensors haven't been created and cached yet
         # preprocess the document to convert it to tensors and cache them
         preprocessed_batches = []
-        # cache_file = self.config.default_root_dir / "inputs.pt"
-        cache_file = self.CACHE_PATH / self.data_id / "inputs.pt"
+        cache_file = self.CACHE_PATH / self.data_id / f"{prefix}inputs.pt"
         if not cache_file.exists():
             preprocessed_batches = self.preprocess(
-                docs_path=docs_path, labels_fields=annotations_entity_names, annotations_path=annotations_path
+                docs_path=docs_path, labels_fields=annotations_entity_names, annotations_path=None
             )
 
             print(f"Caching preprocessed batches in: {cache_file}")
@@ -278,16 +272,42 @@ class HFBIOTaggerPredictorTrainer:
         # create the dataloader
         preprocessed_batches = [{k: v.to(self.device) for k, v in batch.items()} for batch in preprocessed_batches]
         docs_dataloader = DataLoader(preprocessed_batches, batch_size=None)  # disable automatic batching
+        return docs_dataloader
+
+    def train(
+        self,
+        docs_path: Path,
+        val_docs_path: Optional[Path],
+        annotations_entity_names: Optional[List[str]] = None,
+        annotations_path: Optional[Path] = None,
+    ):
+        
+        train_dataloader = self.load_docs_from_path(
+            docs_path=docs_path,
+            annotations_entity_names=annotations_entity_names,
+        )
+
+        if val_docs_path is not None:
+            val_dataloader = self.load_docs_from_path(
+                docs_path=val_docs_path,
+                annotations_entity_names=annotations_entity_names,
+                prefix="val_"
+            )
+        else:
+            val_dataloader = None
 
         # Run the training loop
-        self._train(docs_dataloader)
+        self._train(train_dataloader, val_dataloader)
 
-    def _train(self, docs: DataLoader):
+    def _train(self, train_docs: DataLoader, val_docs: Optional[DataLoader] = None):
         # The module should automatically be put on the correct device, so I'm not sure why I need to do this.
         # set the number of training steps for the optimizer.
-        self.predictor.num_training_steps = len(docs) * self.config.max_epochs
+        self.predictor.num_training_steps = len(train_docs) * self.config.max_epochs
         self.predictor.model.to(self.device)
-        self.trainer.fit(self.predictor, docs)
+        if val_docs is not None:
+            self.trainer.fit(self.predictor, train_docs)
+        else:    
+            self.trainer.fit(self.predictor, train_docs)
 
     def eval(self, docs_path: Path, annotations_entity_names: List[str]):
         """This is going to be a bit different from just calling `predict` on the predictor.
@@ -330,7 +350,6 @@ class HFBIOTaggerPredictorTrainer:
             # each item of the list is associated with a entity (eg token)
             # basically, this amounts to removing the masked tokens from `label_ids`
             # and combining the ones with the same entity id
-            # breakpoint()
             preds = []
             for batch in batches:
                 for pred in self.predictor.predictor._predict_batch(batch=batch, device=self.device):
@@ -339,7 +358,7 @@ class HFBIOTaggerPredictorTrainer:
 
             # (3) Postprocess into proper Annotations
             annotations = self.predictor.predictor.postprocess(
-                doc=document, context_name=self.predictor.context_name, preds=preds
+                doc=document, context_name=self.predictor.context_name, preds=preds, merge_tokens=False
             )
 
             all_annotations.append(annotations)
@@ -398,7 +417,7 @@ class HFBIOTaggerPredictorTrainConfig:
 
     data_path: Path  # Path to the data to train on. Should be a jsonl file where each row is a doc.
     label_field: str  # The field in the document to use as the labels for the tokens.
-    # label_fields: List[str]  # The fields in the document to use as labels for the tokens.
+    val_data_path: Optional[Path] = None
     entity_name: str = "tokens"  # The field in the document to use as the unit of prediction.
     context_name: str = "pages"  # The field in the document to use as the input example to the model.
     model_name_or_path: str = "allenai/scibert_scivocab_uncased"
@@ -460,7 +479,11 @@ def main(config: HFBIOTaggerPredictorTrainConfig):
     )
 
     if config.mode == "train":
-        trainer.train(docs_path=config.data_path, annotations_entity_names=label_fields)
+        trainer.train(
+            docs_path=config.data_path,
+            val_docs_path=config.val_data_path,
+            annotations_entity_names=label_fields
+        )
     elif config.mode == "eval":
         trainer.eval(docs_path=config.data_path, annotations_entity_names=label_fields)
     else:
