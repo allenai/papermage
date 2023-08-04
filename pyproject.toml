@@ -14,7 +14,8 @@ dependencies = [
         'scipy>=1.9.0',
         'pandas<2',
         'ncls==0.0.66',
-        'necessary>=0.3.2'
+        'necessary>=0.3.2',
+        'grobid-client-python==0.0.5'
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
