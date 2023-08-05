@@ -88,3 +88,39 @@ class TestDocument(unittest.TestCase):
 
         self.assertEqual(symbols, doc.symbols)
         self.assertEqual(0, len(doc.metadata))
+
+    def test_cross_referencing(self):
+        doc = Document("This is a test document!")
+        # boxes are in a top-left to bottom-right diagonal fashion (same page)
+        tokens = [
+            Entity.from_json({"spans": [[0, 4]], "boxes": [[0, 0, 0.5, 0.5, 0]]}),
+            Entity.from_json({"spans": [[5, 7]], "boxes": [[1, 1, 0.5, 0.5, 0]]}),
+            Entity.from_json({"spans": [[8, 9]], "boxes": [[2, 2, 0.5, 0.5, 0]]}),
+            Entity.from_json({"spans": [[10, 14]], "boxes": [[3, 3, 0.5, 0.5, 0]]}),
+            Entity.from_json({"spans": [[15, 23]], "boxes": [[4, 4, 0.5, 0.5, 0]]}),
+            Entity.from_json({"spans": [[23, 24]], "boxes": [[5, 5, 0.5, 0.5, 0]]}),
+        ]
+        # boxes are also same diagonal fashion, but bigger.
+        # last box super big on wrong page.
+        chunks = [
+            Entity.from_json({"spans": [[0, 9]], "boxes": [[0, 0, 2.01, 2.01, 0]]}),
+            Entity.from_json({"spans": [[12, 23]], "boxes": [[3.0, 3.0, 4.0, 4.0, 0]]}),
+            Entity.from_json({"spans": [[23, 24]], "boxes": [[0, 0, 10.0, 10.0, 1]]}),
+        ]
+        doc.annotate_entity(field_name="tokens", entities=tokens)
+        doc.annotate_entity(field_name="chunks", entities=chunks)
+
+        # find by span is the default overload of Entity.__attr__
+        self.assertListEqual(doc.chunks[0].tokens, tokens[0:3])
+        self.assertListEqual(doc.chunks[1].tokens, tokens[3:5])
+        self.assertListEqual(doc.chunks[2].tokens, [tokens[5]])
+
+        # find by span works fine
+        self.assertListEqual(doc.chunks[0].tokens, doc.find_by_span(query=doc.chunks[0], field_name="tokens"))
+        self.assertListEqual(doc.chunks[1].tokens, doc.find_by_span(query=doc.chunks[1], field_name="tokens"))
+        self.assertListEqual(doc.chunks[2].tokens, doc.find_by_span(query=doc.chunks[2], field_name="tokens"))
+
+        # find by box
+        self.assertListEqual(doc.find_by_box(query=doc.chunks[0], field_name="tokens"), doc.tokens[0:3])
+        self.assertListEqual(doc.find_by_box(query=doc.chunks[1], field_name="tokens"), doc.tokens[3:6])
+        self.assertListEqual(doc.find_by_box(query=doc.chunks[2], field_name="tokens"), [])
