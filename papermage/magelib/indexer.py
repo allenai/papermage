@@ -107,7 +107,7 @@ class EntityBoxIndexer(Indexer):
     @kylel
     """
 
-    def __init__(self, entities: List[Entity]) -> None:
+    def __init__(self, entities: List[Entity], allow_overlap: bool = True) -> None:
         self._entities = entities
 
         self._box_id_to_entity_id = {}
@@ -125,7 +125,8 @@ class EntityBoxIndexer(Indexer):
         self._np_boxes_y2 = np.array([b.t + b.h for b in self._boxes])
         self._np_boxes_page = np.array([b.page for b in self._boxes])
 
-        self._ensure_disjoint()
+        if not allow_overlap:
+            self._ensure_disjoint()
 
     def _find_overlap_boxes(self, query: Box) -> List[int]:
         x1, y1, x2, y2 = query.xy_coordinates

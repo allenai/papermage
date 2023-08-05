@@ -7,7 +7,13 @@
 
 from typing import Dict, Iterable, List, Optional
 
-from papermage.magelib import Entity, EntitySpanIndexer, Image, Metadata
+from papermage.magelib import (
+    Entity,
+    EntityBoxIndexer,
+    EntitySpanIndexer,
+    Image,
+    Metadata,
+)
 
 # document field names
 SymbolsFieldName = "symbols"
@@ -28,13 +34,17 @@ class Document:
         self.symbols = symbols
         self.metadata = metadata if metadata else Metadata()
         self.__entity_span_indexers: Dict[str, EntitySpanIndexer] = {}
+        self.__entity_box_indexers: Dict[str, EntityBoxIndexer] = {}
 
     @property
     def fields(self) -> List[str]:
         return list(self.__entity_span_indexers.keys()) + self.SPECIAL_FIELDS
 
-    def find_span_overlap_entities(self, query: Entity, field_name: str) -> List[Entity]:
+    def find_by_span(self, query: Entity, field_name: str) -> List[Entity]:
         return self.__entity_span_indexers[field_name].find(query=query)
+
+    def find_by_box(self, query: Entity, field_name: str) -> List[Entity]:
+        return self.__entity_box_indexers[field_name].find(query=query)
 
     def check_field_name_availability(self, field_name: str) -> None:
         if field_name in self.SPECIAL_FIELDS:
@@ -55,6 +65,7 @@ class Document:
 
         setattr(self, field_name, entities)
         self.__entity_span_indexers[field_name] = EntitySpanIndexer(entities=entities)
+        self.__entity_box_indexers[field_name] = EntityBoxIndexer(entities=entities)
 
     def remove_entity(self, field_name: str):
         for entity in getattr(self, field_name):
