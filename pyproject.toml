@@ -15,7 +15,8 @@ dependencies = [
         'pandas<2',
         'ncls==0.0.66',
         'necessary>=0.3.2',
-        'grobid-client-python==0.0.5'
+        'grobid-client-python==0.0.5',
+        'charset-normalizer',
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",

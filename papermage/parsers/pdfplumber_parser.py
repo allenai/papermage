@@ -24,6 +24,7 @@ from papermage.magelib import (
     TokensFieldName,
 )
 from papermage.parsers.parser import Parser
+from papermage.utils.text import maybe_normalize
 
 _TOL = Union[int, float]
 
@@ -210,7 +211,7 @@ class PDFPlumberParser(Parser):
                 fine_tokens = [
                     {
                         "text": token["text"],
-                        "fontname": token["fontname"],
+                        "fontname": maybe_normalize(token["fontname"]),
                         "size": token["size"],
                         "bbox": Box.from_xy_coordinates(
                             x1=float(token["x0"]),
