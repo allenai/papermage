@@ -74,7 +74,8 @@ class TestEntityBoxIndexer(unittest.TestCase):
         entities = [Entity(boxes=[Box(0, 0, 5, 5, page=0), Box(4, 4, 7, 7, page=0)])]
 
         with self.assertRaises(ValueError):
-            EntityBoxIndexer(entities)
+            EntityBoxIndexer(entities=entities, allow_overlap=False)
+        EntityBoxIndexer(entities=entities, allow_overlap=True)
 
     def test_overlap_between_entities_fails_checks(self):
         entities = [
@@ -83,7 +84,8 @@ class TestEntityBoxIndexer(unittest.TestCase):
         ]
 
         with self.assertRaises(ValueError):
-            EntityBoxIndexer(entities)
+            EntityBoxIndexer(entities=entities, allow_overlap=False)
+        EntityBoxIndexer(entities=entities, allow_overlap=True)
 
     def test_finds_matching_entities_in_doc_order(self):
         entities_to_index = [
@@ -91,7 +93,6 @@ class TestEntityBoxIndexer(unittest.TestCase):
             Entity(boxes=[Box(4, 4, 1, 1, page=0)]),
             Entity(boxes=[Box(100, 100, 1, 1, page=0)]),
         ]
-
         index = EntityBoxIndexer(entities_to_index)
 
         # should intersect 1 and 2 but not 3
