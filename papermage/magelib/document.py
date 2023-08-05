@@ -25,6 +25,7 @@ RelationsFieldName = "relations"
 PagesFieldName = "pages"
 TokensFieldName = "tokens"
 RowsFieldName = "rows"
+BlocksFieldName = "blocks"
 
 
 class Document:

@@ -23,6 +23,7 @@ from papermage.magelib.document import (
     PagesFieldName, 
     TokensFieldName, 
     RowsFieldName,
+    BlocksFieldName,
     ImagesFieldName
 )
 
@@ -44,4 +45,5 @@ __all__ = [
     "PagesFieldName",
     "TokensFieldName",
     "RowsFieldName",
+    "BlocksFieldName"
 ]
