@@ -91,6 +91,7 @@ where = ['.',]
 [tool.setuptools.package-data]
 papermage = [
     '../requirements.txt',
+    'py.typed',
 ]
 
 [build-system]
