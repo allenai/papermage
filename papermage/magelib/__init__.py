@@ -13,7 +13,7 @@ from papermage.magelib.box import Box
 from papermage.magelib.metadata import Metadata
 from papermage.magelib.annotation import Annotation
 from papermage.magelib.entity import Entity
-from papermage.magelib.indexer import EntitySpanIndexer
+from papermage.magelib.indexer import EntitySpanIndexer, EntityBoxIndexer
 from papermage.magelib.document import Document
 from papermage.magelib.document import (
     MetadataFieldName, 
@@ -35,6 +35,7 @@ __all__ = [
     "Image",
     "Metadata",
     "EntitySpanIndexer",
+    "EntityBoxIndexer",
     "ImageFieldName",
     "SymbolsFieldName",
     "MetadataFieldName",
