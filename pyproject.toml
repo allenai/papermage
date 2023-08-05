@@ -131,7 +131,6 @@ predictors = [
     'seqeval==1.2.2',
     'effdet==0.3.0',
     'decontext==0.1.4',
-    'grobid-client==0.8.3',
 ]
 production = [
     'optimum[onnxruntime]==1.4.0'
