@@ -1,6 +1,6 @@
 [project]
 name = 'papermage'
-version = '0.3.2'
+version = '0.4.0'
 description = 'Papermage. Casting magic over scientific PDFs.'
 license = {text = 'Apache-2.0'}
 readme = 'README.md'
@@ -14,7 +14,8 @@ dependencies = [
         'scipy>=1.9.0',
         'pandas<2',
         'ncls==0.0.66',
-        'necessary>=0.3.2'
+        'necessary>=0.3.2',
+        'grobid-client-python==0.0.5'
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
