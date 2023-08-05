@@ -12,7 +12,7 @@ from typing import List
 import numpy as np
 from ncls import NCLS
 
-from papermage.magelib import Annotation, Entity
+from papermage.magelib import Annotation, Box, Entity
 
 
 class Indexer:
@@ -66,8 +66,15 @@ class EntitySpanIndexer(Indexer):
         for entity in self._entities:
             for span in entity.spans:
                 matches = [match for match in self._index.find_overlap(span.start, span.end)]
-                if len(matches) > 1:
-                    raise ValueError(f"Detected overlap with existing Entity(s) {matches} for {entity}")
+                match_ids = [
+                    matched_id for _start, _end, matched_id in self._index.find_overlap(span.start, span.end)
+                ]
+                if len(match_ids) > 1:
+                    matches = [self._entities[match_id].to_json() for match_id in match_ids]
+                    raise ValueError(
+                        f"Detected overlap! While processing the Span {span} as part of query Entity {entity.to_json()}, we found that it overlaps with existing Entity(s):\n"
+                        + "\n".join([f"\t{i}\t{m} " for i, m in zip(match_ids, matches)])
+                    )
 
     def find(self, query: Entity) -> List[Entity]:
         if not isinstance(query, Entity):
@@ -89,3 +96,75 @@ class EntitySpanIndexer(Indexer):
         # TODO: provide option to return matched span groups in same order as self._entities
         #   (the span groups the index was built with originally)
         return sorted(list(matched_entities))
+
+
+class EntityBoxIndexer(Indexer):
+    """
+    Manages a data structure for locating overlapping BoxGroups.
+    Builds a static nested containment list from BoxGroups
+    and accepts other BoxGroups as search probes.
+
+    @kylel
+    """
+
+    def __init__(self, entities: List[Entity]) -> None:
+        self._entities = entities
+
+        self._box_id_to_entity_id = {}
+        self._boxes = []
+        box_id = 0
+        for i, e in enumerate(entities):
+            for box in e.boxes:
+                self._boxes.append(box)
+                self._box_id_to_entity_id[box_id] = i
+                box_id += 1
+
+        self._np_boxes_x1 = np.array([b.l for b in self._boxes])
+        self._np_boxes_y1 = np.array([b.t for b in self._boxes])
+        self._np_boxes_x2 = np.array([b.l + b.w for b in self._boxes])
+        self._np_boxes_y2 = np.array([b.t + b.h for b in self._boxes])
+        self._np_boxes_page = np.array([b.page for b in self._boxes])
+
+        self._ensure_disjoint()
+
+    def _find_overlap_boxes(self, query: Box) -> List[int]:
+        x1, y1, x2, y2 = query.xy_coordinates
+        mask = (
+            (self._np_boxes_x1 <= x2)
+            & (self._np_boxes_x2 >= x1)
+            & (self._np_boxes_y1 <= y2)
+            & (self._np_boxes_y2 >= y1)
+            & (self._np_boxes_page == query.page)
+        )
+        return np.where(mask)[0].tolist()
+
+    def _find_overlap_entities(self, query: Box) -> List[int]:
+        return [self._box_id_to_entity_id[box_id] for box_id in self._find_overlap_boxes(query)]
+
+    def _ensure_disjoint(self) -> None:
+        """
+        Constituent box groups must be fully disjoint.
+        Ensure the integrity of the built index.
+        """
+        for entity in self._entities:
+            for box in entity.boxes:
+                match_ids = self._find_overlap_entities(query=box)
+                if len(match_ids) > 1:
+                    matches = [self._entities[match_id].to_json() for match_id in match_ids]
+                    raise ValueError(
+                        f"Detected overlap! While processing the Box {box} as part of query Entity {entity.to_json()}, we found that it overlaps with existing Entity(s):\n"
+                        + "\n".join([f"\t{i}\t{m} " for i, m in zip(match_ids, matches)])
+                    )
+
+    def find(self, query: Entity) -> List[Entity]:
+        if not isinstance(query, Entity):
+            raise ValueError(f"EntityBoxIndexer only works with `query` that is Entity type")
+
+        if not query.boxes:
+            return []
+
+        match_ids = []
+        for box in query.boxes:
+            match_ids.extend(self._find_overlap_entities(query=box))
+
+        return [self._entities[match_id] for match_id in sorted(set(match_ids))]
