@@ -3,7 +3,7 @@ import os
 import pathlib
 import unittest
 
-from papermage.magelib import Document, Entity, Span
+from papermage.magelib import Document, Entity, Metadata, Span
 from papermage.predictors.api_predictors.span_qa_predictor import APISpanQAPredictor
 
 
@@ -15,7 +15,7 @@ class TestSpanQAPredictor(unittest.TestCase):
         self.doc = Document.from_json(doc_json=test_doc_json)
 
         user_selected_span = Entity(
-            spans=[Span(start=2784, end=2803)], metadata={"question": "What does this mean?"}
+            spans=[Span(start=2784, end=2803)], metadata=Metadata(question="What does this mean?")
         )
         self.doc.annotate_entity(field_name="user_selected_span", entities=[user_selected_span])
 
