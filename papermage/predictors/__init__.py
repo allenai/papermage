@@ -5,6 +5,7 @@ from papermage.predictors.hf_predictors.vila_predictor import (
 )
 from papermage.predictors.hf_predictors.whitespace_predictor import WhitespacePredictor
 from papermage.predictors.lp_predictors.block_predictor import LPBlockPredictor
+from papermage.predictors.sklearn_predictors.word_predictor import SVMWordPredictor
 
 __all__ = [
     "HFBIOTaggerPredictor",
@@ -12,4 +13,5 @@ __all__ = [
     "LPBlockPredictor",
     "IVILATokenClassificationPredictor",
     "WhitespacePredictor",
+    "SVMWordPredictor",
 ]

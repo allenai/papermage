@@ -24,11 +24,11 @@ class WhitespacePredictor(BasePredictor):
     def __init__(self) -> None:
         self.whitespace_tokenizer = tokenizers.pre_tokenizers.WhitespaceSplit()
 
-    def predict(self, document: Document) -> List[Entity]:
-        self._doc_field_checker(document)
+    def predict(self, doc: Document) -> List[Entity]:
+        self._doc_field_checker(doc)
 
         # 1) whitespace tokenization on symbols. each token is a nested tuple ('text', (start, end))
-        ws_tokens: List[Tuple] = self.whitespace_tokenizer.pre_tokenize_str(document.symbols)
+        ws_tokens: List[Tuple] = self.whitespace_tokenizer.pre_tokenize_str(doc.symbols)
 
         # 2) filter to just the chunks that are greater than 1 token. Reformat.
         # chunks = []

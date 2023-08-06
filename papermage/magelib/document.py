@@ -61,8 +61,9 @@ class Document:
     def annotate_entity(self, field_name: str, entities: List[Entity]) -> None:
         self.check_field_name_availability(field_name=field_name)
 
-        for entity in entities:
+        for i, entity in enumerate(entities):
             entity.doc = self
+            entity.id = i
 
         setattr(self, field_name, entities)
         self.__entity_span_indexers[field_name] = EntitySpanIndexer(entities=entities)
