@@ -203,7 +203,7 @@ class BaseSinglePageTokenClassificationPredictor(BasePredictor):
 
     def predict(self, doc: Document, subpage_per_run: Optional[int] = None) -> List[Annotation]:
         page_prediction_results = []
-        for page_id, page in enumerate(tqdm(doc.pages)):
+        for page_id, page in enumerate(doc.pages):
             if page.tokens:
                 page_width, page_height = doc.images[page_id].pilimage.size
 
@@ -239,7 +239,7 @@ class BaseSinglePageTokenClassificationPredictor(BasePredictor):
 
             start = min([ele.start for ele in cur_spans])
             end = max([ele.end for ele in cur_spans])
-            sg = Entity(spans=[Span(start, end)], metadata=Metadata(type=label))
+            sg = Entity(spans=[Span(start, end)], metadata=Metadata(label=label))
             prediction_spans.append(sg)
         return prediction_spans
 
