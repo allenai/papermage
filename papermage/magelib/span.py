@@ -13,6 +13,8 @@ from collections import defaultdict
 
 
 class Span:
+    __slots__ = ['start', 'end']
+
     def __init__(self, start: int, end: int):
         self.start = start
         self.end = end
@@ -39,11 +41,16 @@ class Span:
             return self.end < other.end
         return self.start < other.start
 
+    def __hash__(self) -> int:
+        return hash((self.start, self.end))
+
     def is_overlap(self, other: 'Span') -> bool:
         """Whether self overlaps with the other Span object."""
-        return self.start <= other.start < self.end or \
-               other.start <= self.start < other.end or \
-               self == other
+        return (
+            self.start <= other.start < self.end
+            or other.start <= self.start < other.end
+            or self == other
+        )
 
     @classmethod
     def create_enclosing_span(cls, spans: List['Span']) -> 'Span':
@@ -105,20 +112,22 @@ class MergeClusterSpans:
             self._clusters = self._cluster(spans=self.spans)
         return self._clusters
 
-    def _build_graph(self, spans: List[Span], index_distance: int) -> defaultdict(list):
+    @staticmethod
+    def _is_neighboring_spans(span1: Span, span2: Span, index_distance: int) -> bool:
+        """Whether two spans are considered neighboring"""
+        return min(
+            abs(span1.start - span2.end), abs(span1.end - span2.start)
+        ) <= index_distance
+
+    def _build_graph(self, spans: List[Span], index_distance: int) -> Dict[int, List[int]]:
         """
         Build graph, each node is the position within the input list of spans.
         Spans are considered overlapping if they are index_distance apart
         """
-        is_neighboring_spans = (
-            lambda span1, span2: min(
-                abs(span1.start - span2.end), abs(span1.end - span2.start)
-            ) <= index_distance
-        )
         graph = defaultdict(list)
         for i, span_i in enumerate(spans):
             for j in range(i + 1, len(spans)):
-                if is_neighboring_spans(span_i, spans[j]):
+                if self._is_neighboring_spans(span1=span_i, span2=spans[j], index_distance=index_distance):
                     graph[i].append(j)
                     graph[j].append(i)
         return graph

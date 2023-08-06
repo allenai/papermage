@@ -7,7 +7,7 @@ Rectangular region on a document.
 """
 
 import logging
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -15,6 +15,9 @@ from papermage.magelib import Span
 
 
 class Box:
+
+    __slots__ = ["l", "t", "w", "h", "page"]
+
     def __init__(self, l: float, t: float, w: float, h: float, page: int):
         assert w >= 0.0, "Box width cant be negative"
         assert h >= 0.0, "Box height cant be negative"
@@ -72,6 +75,17 @@ class Box:
     @property
     def xy_coordinates(self) -> Tuple[float, float, float, float]:
         return self.l, self.t, self.l + self.w, self.t + self.h
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Box):
+            return False
+        return (
+            self.l == other.l
+            and self.t == other.t
+            and self.w == other.w
+            and self.h == other.h
+            and self.page == other.page
+        )
 
     def to_relative(self, page_width: float, page_height: float) -> "Box":
         """Get the relative coordinates of self based on page_width, page_height."""
