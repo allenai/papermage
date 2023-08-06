@@ -53,7 +53,7 @@ class CoreRecipe(Recipe):
         doc.annotate_images(images=list(images))
 
         logger.info("Predicting words...")
-        words = self.word_predictor.predict(document=doc)
+        words = self.word_predictor.predict(doc=doc)
         doc.annotate_entity(field_name="words", entities=words)
 
         logger.info("Predicting blocks...")
