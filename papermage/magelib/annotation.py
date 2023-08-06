@@ -67,7 +67,11 @@ class Annotation:
 
     def __getattr__(self, field: str) -> List["Annotation"]:
         """This Overloading is convenient syntax since the `entity.layer` operation is intuitive for folks."""
-        return self.find_by_span(field=field)
+        try:
+            return self.find_by_span(field=field)
+        except ValueError:
+            # maybe users just want some attribute of the Annotation object
+            return self.__getattribute__(field)
 
     def find_by_span(self, field: str) -> List["Annotation"]:
         """This method allows you to access overlapping Annotations
@@ -77,8 +81,8 @@ class Annotation:
 
         if field in self.doc.fields:
             return self.doc.find_by_span(self, field)
-
-        return self.__getattribute__(field)
+        else:
+            raise ValueError(f"Field {field} not found in Document")
 
     def find_by_box(self, field: str) -> List["Annotation"]:
         """This method allows you to access overlapping Annotations
@@ -89,5 +93,5 @@ class Annotation:
 
         if field in self.doc.fields:
             return self.doc.find_by_box(self, field)
-
-        return self.__getattribute__(field)
+        else:
+            raise ValueError(f"Field {field} not found in Document")
