@@ -45,10 +45,11 @@ class Entity(Annotation):
 
     @classmethod
     def from_json(cls, entity_json: Dict) -> "Entity":
+        # the .get(..., None) or [] pattern is to handle the case where the key is present but the value is None
         return cls(
-            spans=[Span.from_json(span_json=span_json) for span_json in entity_json.get("spans", [])],
-            boxes=[Box.from_json(box_json=box_json) for box_json in entity_json.get("boxes", [])],
-            metadata=Metadata.from_json(entity_json.get("metadata", {})),
+            spans=[Span.from_json(span_json=span_json) for span_json in entity_json.get("spans", None) or []],
+            boxes=[Box.from_json(box_json=box_json) for box_json in entity_json.get("boxes", None) or []],
+            metadata=Metadata.from_json(entity_json.get("metadata", None) or {}),
         )
 
     @property

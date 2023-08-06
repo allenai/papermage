@@ -103,7 +103,9 @@ class HFBIOTaggerPredictor(BasePredictor):
         self.entity_name = entity_name
         self.context_name = context_name
         self.batch_size = batch_size
-        self.device = device
+
+        # move model to device
+        self.model.to(device)
 
         # For some reason, the roberta max_position_embeddings is larger than the actual model context window
         # so use the model_max_length instead. (We can't replace model_max_length with max_position_embeddings
@@ -155,7 +157,7 @@ class HFBIOTaggerPredictor(BasePredictor):
             },
         )
         # this casts python Dict[List] into tensors.  if using GPU, would do `device='gpu'`
-        self.python_to_torch_mapper = Python2TorchMapper(device=device)
+        self.python_to_torch_mapper = Python2TorchMapper(device=self.model.device)
         # combining everything
         self.preprocess_mapper = self.tokenizer_mapper >> self.unpacking_mapper >> self.batch_size_mapper
 
@@ -312,9 +314,7 @@ class HFBIOTaggerPredictor(BasePredictor):
         return annotations
 
     def _predict_batch(
-        self,
-        batch: BIOBatch,
-        device: str = "cpu",
+        self, batch: BIOBatch,
     ) -> List[BIOPrediction]:
         #
         #   preprocessing!!  (padding & tensorification)
@@ -330,8 +330,6 @@ class HFBIOTaggerPredictor(BasePredictor):
         #
         #   inference!! (preferably on gpu)
         #
-        # TODO: add something here for gpu migration
-        pytorch_batch = {k: v.to(device) for k, v in pytorch_batch.items()}
         self.model.eval()
         with torch.no_grad():
             pytorch_output = self.model(**pytorch_batch)
