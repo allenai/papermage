@@ -3,6 +3,13 @@ from papermage.predictors.hf_predictors.bio_tagger_predictor import HFBIOTaggerP
 from papermage.predictors.hf_predictors.vila_predictor import (
     IVILATokenClassificationPredictor,
 )
+from papermage.predictors.hf_predictors.whitespace_predictor import WhitespacePredictor
 from papermage.predictors.lp_predictors.block_predictor import LPBlockPredictor
 
-__all__ = ["HFBIOTaggerPredictor", "APISpanQAPredictor", "LPBlockPredictor", "IVILATokenClassificationPredictor"]
+__all__ = [
+    "HFBIOTaggerPredictor",
+    "APISpanQAPredictor",
+    "LPBlockPredictor",
+    "IVILATokenClassificationPredictor",
+    "WhitespacePredictor",
+]
