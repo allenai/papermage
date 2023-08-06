@@ -5,14 +5,16 @@
 
 """
 
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Iterable, List, Optional, Union
 
 from papermage.magelib import (
+    Box,
     Entity,
     EntityBoxIndexer,
     EntitySpanIndexer,
     Image,
     Metadata,
+    Span,
 )
 
 # document field names
@@ -42,11 +44,21 @@ class Document:
     def fields(self) -> List[str]:
         return list(self.__entity_span_indexers.keys()) + self.SPECIAL_FIELDS
 
-    def find_by_span(self, query: Entity, field_name: str) -> List[Entity]:
-        return self.__entity_span_indexers[field_name].find(query=query)
+    def find_by_span(self, query: Union[Entity, Span], field_name: str) -> List[Entity]:
+        if isinstance(query, Entity):
+            return self.__entity_span_indexers[field_name].find(query=query)
+        elif isinstance(query, Span):
+            return self.__entity_span_indexers[field_name].find(query=Entity(spans=[query]))
+        else:
+            raise TypeError(f"Unsupported query type {type(query)}")
 
-    def find_by_box(self, query: Entity, field_name: str) -> List[Entity]:
-        return self.__entity_box_indexers[field_name].find(query=query)
+    def find_by_box(self, query: Union[Entity, Box], field_name: str) -> List[Entity]:
+        if isinstance(query, Entity):
+            return self.__entity_box_indexers[field_name].find(query=query)
+        elif isinstance(query, Box):
+            return self.__entity_box_indexers[field_name].find(query=Entity(boxes=[query]))
+        else:
+            raise TypeError(f"Unsupported query type {type(query)}")
 
     def check_field_name_availability(self, field_name: str) -> None:
         if field_name in self.SPECIAL_FIELDS:
@@ -76,6 +88,7 @@ class Document:
 
         delattr(self, field_name)
         del self.__entity_span_indexers[field_name]
+        del self.__entity_box_indexers[field_name]
 
     def get_relation(self, name: str) -> List["Relation"]:
         raise NotImplementedError
