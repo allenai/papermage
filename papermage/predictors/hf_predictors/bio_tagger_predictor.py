@@ -245,7 +245,9 @@ class HFBIOTaggerPredictor(BasePredictor):
             metadata=Metadata(label=label, score=np.mean(scores)),
         )
 
-    def postprocess(self, doc: Document, context_name: str, preds: List[BIOPrediction], merge_tokens: bool = True) -> List[Annotation]:
+    def postprocess(
+        self, doc: Document, context_name: str, preds: List[BIOPrediction], merge_tokens: bool = True
+    ) -> List[Annotation]:
         """This function handles a bunch of nonsense that happens with Huggingface models &
         how we processed the data.  Namely:
 
@@ -285,7 +287,10 @@ class HFBIOTaggerPredictor(BasePredictor):
                 )
 
                 if merge_tokens:
-                    if new_entity.metadata.label.startswith("B"):
+                    if new_entity.metadata.label is None or new_entity.metadata.startswith("I"):
+                        # Either "I", so we're in the same field or "None", so we're in the same word-piece
+                        field_annotations.append(new_entity)
+                    elif new_entity.metadata.label.startswith("B"):
                         # end the last annotation
                         if field_annotations:
                             annotations.append(self.combine_annotations(field_annotations))
@@ -296,8 +301,9 @@ class HFBIOTaggerPredictor(BasePredictor):
                             annotations.append(self.combine_annotations(field_annotations))
                         field_annotations = []
                     else:
-                        # Either "I", so we're in the same field or "None", so we're in the same word-piece
-                        field_annotations.append(new_entity)
+                        raise ValueError(
+                            f"Invalid label: {new_entity.metadata.label}. BIO labels should start with B, I, or O."
+                        )
                 else:
                     annotations.append(new_entity)
         if merge_tokens and field_annotations:
