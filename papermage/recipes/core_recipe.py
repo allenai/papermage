@@ -14,6 +14,7 @@ from papermage.predictors import (
     HFBIOTaggerPredictor,
     IVILATokenClassificationPredictor,
     LPBlockPredictor,
+    PysbdSentencePredictor,
     SVMWordPredictor,
 )
 from papermage.rasterizers.rasterizer import PDF2ImageRasterizer
@@ -42,6 +43,7 @@ class CoreRecipe(Recipe):
             entity_name="tokens",
             context_name="pages",
         )
+        self.sent_predictor = PysbdSentencePredictor()
         logger.info("Finished instantiating recipe")
 
     def from_path(self, pdfpath: str) -> Document:
@@ -55,6 +57,10 @@ class CoreRecipe(Recipe):
         logger.info("Predicting words...")
         words = self.word_predictor.predict(doc=doc)
         doc.annotate_entity(field_name="words", entities=words)
+
+        logger.info("Predicting sentences...")
+        sentences = self.sent_predictor.predict(doc=doc)
+        doc.annotate_entity(field_name="sentences", entities=sentences)
 
         logger.info("Predicting blocks...")
         layout = self.effdet_publaynet_predictor.predict(doc=doc)
