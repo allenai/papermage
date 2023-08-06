@@ -233,16 +233,16 @@ class HFBIOTaggerPredictor(BasePredictor):
         ]
 
     def combine_annotations(self, annotations: List[Entity]) -> Annotation:
-        # import pytest; pytest.set_trace()
         label = annotations[0].metadata.label[2:]  # remove the B-
         scores = [annotation.metadata.score for annotation in annotations]
         span = Span.create_enclosing_span([span for annotation in annotations for span in annotation.spans])
         smaller_boxes = [box for annotation in annotations for box in annotation.boxes]
-        box = [Box.create_enclosing_box(smaller_boxes)] if smaller_boxes else []
+        # For now, don't merge boxes because they can be on different pages
+        # box = [Box.create_enclosing_box(smaller_boxes)] if smaller_boxes else []
         return Entity(
             spans=[span],
-            boxes=box,
-            metadata=Metadata(label=label, score=np.mean(scores)),
+            boxes=smaller_boxes,
+            metadata=Metadata(label=label, score=np.mean([score for score in scores if score is not None])),
         )
 
     def postprocess(
@@ -287,7 +287,7 @@ class HFBIOTaggerPredictor(BasePredictor):
                 )
 
                 if merge_tokens:
-                    if new_entity.metadata.label is None or new_entity.metadata.startswith("I"):
+                    if new_entity.metadata.label is None or new_entity.metadata.label.startswith("I"):
                         # Either "I", so we're in the same field or "None", so we're in the same word-piece
                         field_annotations.append(new_entity)
                     elif new_entity.metadata.label.startswith("B"):
