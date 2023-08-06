@@ -1,6 +1,6 @@
 [project]
 name = 'papermage'
-version = '0.5.0'
+version = '0.6.0'
 description = 'Papermage. Casting magic over scientific PDFs.'
 license = {text = 'Apache-2.0'}
 readme = 'README.md'
@@ -133,6 +133,7 @@ predictors = [
     'seqeval==1.2.2',
     'effdet==0.3.0',
     'decontext==0.1.4',
+    'vila==0.5.0'
 ]
 production = [
     'optimum[onnxruntime]==1.4.0'
