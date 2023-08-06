@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+import json
 
 import torch
 import tqdm
@@ -12,11 +13,10 @@ with necessary("datasets"):
     import datasets
 
 ap = ArgumentParser()
-ap.add_argument("vila", choices=["new", "old"])
+ap.add_argument("vila", choices=["new", "old", "grobid"])
 args = ap.parse_args()
 
 dt = datasets.load_dataset('allenai/s2-vl', split='test')
-# dt = datasets.load_dataset("json", data_dir="/net/nfs2.s2-research/lucas/s2-vl/data/", split="test")
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 if args.vila == "new":
@@ -30,6 +30,8 @@ elif args.vila == "old":
     vila_predictor = IVILATokenClassificationPredictor.from_pretrained(
         "allenai/ivila-row-layoutlm-finetuned-s2vl-v2", device=device
     )
+elif args.vila == "grobid":
+    vila_predictor = None
 else:
     raise ValueError(f"Invalid value for `vila`: {args.vila}")
 
@@ -44,10 +46,19 @@ for row in tqdm.tqdm(dt, desc="Predicting", unit="doc"):
     doc.annotate_images(images=images)
     docs.append(doc)
 
-    entities = vila_predictor.predict(doc=doc)
-    doc.annotate_entity(entities=entities, field_name="vila_entities")
+    if args.vila != "grobid":
+        entities = vila_predictor.predict(doc=doc)
+        doc.annotate_entity(entities=entities, field_name="vila_entities")
 
-    gold_tokens.extend(e[0].metadata.type if len(e := token._vila_entities) else "null" for token in doc.tokens)
-    pred_tokens.extend(e[0].metadata.label if len(e := token.vila_entities) else "null" for token in doc.tokens)
+        gold_tokens.extend(e[0].metadata.type if len(e := token._vila_entities) else "null" for token in doc.tokens)
+        pred_tokens.extend(e[0].metadata.label if len(e := token.vila_entities) else "null" for token in doc.tokens)
+
+    else:
+        path = f"/net/nfs2.s2-research/aps/papermage/dataset/{doc.metadata.sha}-{doc.metadata.page:02d}.json"
+        with open(path, "r") as f:
+            grobid_doc = Document.from_json(json.load(f))
+        breakpoint()
+
+
 
 print(classification_report(y_true=gold_tokens, y_pred=pred_tokens, digits=4))

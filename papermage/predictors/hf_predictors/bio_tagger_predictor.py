@@ -314,7 +314,9 @@ class HFBIOTaggerPredictor(BasePredictor):
         return annotations
 
     def _predict_batch(
-        self, batch: BIOBatch,
+        self,
+        batch: BIOBatch,
+        device: Optional[str] = None
     ) -> List[BIOPrediction]:
         #
         #   preprocessing!!  (padding & tensorification)
@@ -327,6 +329,9 @@ class HFBIOTaggerPredictor(BasePredictor):
                 }
             )
         )
+        # change device if needed
+        if device:
+            pytorch_batch = {k: v.to(device) for k, v in pytorch_batch.items()}
         #
         #   inference!! (preferably on gpu)
         #
