@@ -238,7 +238,13 @@ class HFBIOTaggerPredictor(BasePredictor):
         span = Span.create_enclosing_span([span for annotation in annotations for span in annotation.spans])
         smaller_boxes = [box for annotation in annotations for box in annotation.boxes]
         # For now, don't merge boxes because they can be on different pages
-        # box = [Box.create_enclosing_box(smaller_boxes)] if smaller_boxes else []
+        # group boxes by page
+        smaller_boxes_by_page = defaultdict(list)
+        for annotation in annotations:
+            for box in annotation.boxes:
+                smaller_boxes_by_page[box.page].append(box)
+        smaller_boxes = [Box.create_enclosing_box(boxes) for boxes in smaller_boxes_by_page.values() if boxes]
+
         return Entity(
             spans=[span],
             boxes=smaller_boxes,

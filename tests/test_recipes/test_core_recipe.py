@@ -5,6 +5,7 @@
 """
 
 import os
+from pathlib import Path
 import unittest
 
 from papermage.magelib import Document, Entity, Image
@@ -40,7 +41,8 @@ def round_all_floats(d: dict):
 
 class TestCoreRecipe(unittest.TestCase):
     def setUp(self):
-        self.pdfpath = os.path.join(os.path.dirname(__file__), "../fixtures/1903.10676.pdf")
+        self.fixture_path = Path("tests") / "fixtures"
+        self.pdfpath = str(self.fixture_path / "1903.10676.pdf")
         self.recipe = CoreRecipe()
         self.doc = self.recipe.from_path(pdfpath=self.pdfpath)
 
