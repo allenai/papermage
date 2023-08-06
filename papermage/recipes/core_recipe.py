@@ -14,6 +14,7 @@ from papermage.predictors import (
     HFBIOTaggerPredictor,
     IVILATokenClassificationPredictor,
     LPBlockPredictor,
+    SVMWordPredictor,
 )
 from papermage.rasterizers.rasterizer import PDF2ImageRasterizer
 from papermage.recipes.recipe import Recipe
@@ -26,11 +27,13 @@ class CoreRecipe(Recipe):
         effdet_mfd_predictor_path: str = "lp://efficientdet/MFD",
         ivila_predictor_path: str = "allenai/ivila-row-layoutlm-finetuned-s2vl-v2",
         bio_roberta_predictor_path: str = "allenai/vila-roberta-large-s2vl-internal",
+        svm_word_predictor_path: str = "https://ai2-s2-research-public.s3.us-west-2.amazonaws.com/mmda/models/svm_word_predictor.tar.gz",
     ):
         logger.info("Instantiating recipe...")
         self.parser = PDFPlumberParser()
         self.rasterizer = PDF2ImageRasterizer()
 
+        self.word_predictor = SVMWordPredictor.from_path(svm_word_predictor_path)
         self.effdet_publaynet_predictor = LPBlockPredictor.from_pretrained(effdet_publaynet_predictor_path)
         self.effdet_mfd_predictor = LPBlockPredictor.from_pretrained(effdet_mfd_predictor_path)
         self.ivila_predictor = IVILATokenClassificationPredictor.from_pretrained(ivila_predictor_path)
@@ -49,8 +52,11 @@ class CoreRecipe(Recipe):
         images = self.rasterizer.rasterize(input_pdf_path=pdfpath, dpi=72)
         doc.annotate_images(images=list(images))
 
-        logger.info("Predicting blocks...")
+        logger.info("Predicting words...")
+        words = self.word_predictor.predict(document=doc)
+        doc.annotate_entity(field_name="words", entities=words)
 
+        logger.info("Predicting blocks...")
         layout = self.effdet_publaynet_predictor.predict(doc=doc)
         equations = self.effdet_mfd_predictor.predict(doc=doc)
 
