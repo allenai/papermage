@@ -15,10 +15,10 @@ import pysbd
 from papermage.magelib import (
     Document,
     Entity,
-    PagesFieldName,
+    PagesLayerName,
     Span,
-    TokensFieldName,
-    WordsFieldName,
+    TokensLayerName,
+    WordsLayerName,
 )
 from papermage.predictors.base_predictor import BasePredictor
 
@@ -79,7 +79,7 @@ class PysbdSentencePredictor(BasePredictor):
     """
 
     REQUIRED_BACKENDS = ["pysbd"]
-    REQUIRED_DOCUMENT_FIELDS = [PagesFieldName, TokensFieldName]  # type: ignore
+    REQUIRED_DOCUMENT_FIELDS = [PagesLayerName, TokensLayerName]  # type: ignore
 
     def __init__(self) -> None:
         self._segmenter = pysbd.Segmenter(language="en", clean=False, char_span=True)
@@ -120,14 +120,14 @@ class PysbdSentencePredictor(BasePredictor):
         return split
 
     def predict(self, doc: Document) -> List[Entity]:
-        if hasattr(doc, WordsFieldName):
-            words = [word.text for word in getattr(doc, WordsFieldName)]
-            attr_name = WordsFieldName
+        if hasattr(doc, WordsLayerName):
+            words = [word.text for word in getattr(doc, WordsLayerName)]
+            attr_name = WordsLayerName
             # `words` is preferred as it should has better reading
             # orders and text representation
         else:
             words = [token.text for token in doc.tokens]
-            attr_name = TokensFieldName
+            attr_name = TokensLayerName
 
         split = self.split_token_based_on_sentences_boundary(words)
 

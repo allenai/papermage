@@ -8,7 +8,7 @@ Converts pages of a PDF into Images that can be attached to a Document.
 
 from typing import Iterable, List, Protocol
 
-from papermage.magelib import Document, Image, PagesFieldName
+from papermage.magelib import Document, Image, PagesLayerName
 
 try:
     import pdf2image
@@ -34,9 +34,9 @@ class Rasterizer(Protocol):
     @classmethod
     def attach_images(cls, images: List[Image], doc: Document) -> None:
         """Assumes doc already has `pages` annotated."""
-        if PagesFieldName not in doc.fields:
+        if PagesLayerName not in doc.fields:
             raise ValueError(f"Failed to attach. Document is missing `pages`.")
-        pages = doc.get_entity(field_name=PagesFieldName)
+        pages = doc.get_entity(field_name=PagesLayerName)
         if len(images) != len(pages):
             raise ValueError(f"Failed to attach. {len(images)} `images` != {len(pages)} pages in `doc`.")
         for page, image in zip(pages, images):

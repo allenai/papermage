@@ -11,13 +11,13 @@ from typing import List, Optional, Set, Tuple
 
 import tokenizers
 
-from papermage.magelib import Document, Entity, Metadata, Span, TokensFieldName
+from papermage.magelib import Document, Entity, Metadata, Span, TokensLayerName
 from papermage.predictors.base_predictor import BasePredictor
 
 
 class WhitespacePredictor(BasePredictor):
     REQUIRED_BACKENDS = None
-    REQUIRED_DOCUMENT_FIELDS = [TokensFieldName]
+    REQUIRED_DOCUMENT_FIELDS = [TokensLayerName]
 
     _dictionary: Optional[Set[str]] = None
 

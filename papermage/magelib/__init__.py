@@ -7,26 +7,26 @@ Needs to be imported in this order.
 """
 
 
-from papermage.magelib.image import Image
-from papermage.magelib.span import Span
-from papermage.magelib.box import Box
-from papermage.magelib.metadata import Metadata
 from papermage.magelib.annotation import Annotation
-from papermage.magelib.entity import Entity
-from papermage.magelib.indexer import EntitySpanIndexer, EntityBoxIndexer
-from papermage.magelib.document import Document
+from papermage.magelib.box import Box
 from papermage.magelib.document import (
-    MetadataFieldName, 
-    EntitiesFieldName, 
-    SymbolsFieldName,
-    RelationsFieldName, 
-    PagesFieldName, 
-    TokensFieldName, 
-    RowsFieldName,
-    BlocksFieldName,
-    ImagesFieldName,
-    WordsFieldName
+    BlocksLayerName,
+    Document,
+    EntitiesLayerName,
+    ImagesLayerName,
+    MetadataLayerName,
+    PagesLayerName,
+    RelationsLayerName,
+    RowsLayerName,
+    SymbolsLayerName,
+    TokensLayerName,
+    WordsLayerName,
 )
+from papermage.magelib.entity import Entity
+from papermage.magelib.image import Image
+from papermage.magelib.indexer import EntityBoxIndexer, EntitySpanIndexer
+from papermage.magelib.metadata import Metadata
+from papermage.magelib.span import Span
 
 __all__ = [
     "Document",
@@ -39,13 +39,13 @@ __all__ = [
     "EntitySpanIndexer",
     "EntityBoxIndexer",
     "ImageFieldName",
-    "SymbolsFieldName",
-    "MetadataFieldName",
-    "EntitiesFieldName",
-    "RelationsFieldName",
-    "PagesFieldName",
-    "TokensFieldName",
-    "RowsFieldName",
-    "BlocksFieldName",
-    "WordsFieldName"
+    "SymbolsLayerName",
+    "MetadataLayerName",
+    "EntitiesLayerName",
+    "RelationsLayerName",
+    "PagesLayerName",
+    "TokensLayerName",
+    "RowsLayerName",
+    "BlocksLayerName",
+    "WordsLayerName",
 ]

@@ -20,14 +20,14 @@ from vila.predictors import LayoutIndicatorPDFPredictor, SimplePDFPredictor
 
 from papermage.magelib import (
     Annotation,
-    BlocksFieldName,
+    BlocksLayerName,
     Document,
     Entity,
     Metadata,
-    PagesFieldName,
-    RowsFieldName,
+    PagesLayerName,
+    RowsLayerName,
     Span,
-    TokensFieldName,
+    TokensLayerName,
 )
 from papermage.predictors.base_predictor import BasePredictor
 
@@ -122,8 +122,8 @@ def convert_document_page_to_pdf_dict(doc: Document, page_width: int, page_heigh
         (
             token.symbols_from_spans[0],  # words
             token.boxes[0].to_absolute(page_width=page_width, page_height=page_height).xy_coordinates,  # bbox
-            get_visual_group_id(token, RowsFieldName, -1),  # line_ids
-            get_visual_group_id(token, BlocksFieldName, -1),  # block_ids
+            get_visual_group_id(token, RowsLayerName, -1),  # line_ids
+            get_visual_group_id(token, BlocksLayerName, -1),  # block_ids
         )
         for token in doc.tokens
     ]
@@ -169,7 +169,7 @@ def convert_sequence_tagging_to_spans(
 
 class BaseSinglePageTokenClassificationPredictor(BasePredictor):
     REQUIRED_BACKENDS = ["transformers", "torch", "vila"]
-    REQUIRED_DOCUMENT_FIELDS = [PagesFieldName, TokensFieldName]
+    REQUIRED_DOCUMENT_FIELDS = [PagesLayerName, TokensLayerName]
     DEFAULT_SUBPAGE_PER_RUN = 2  # TODO: Might remove this in the future for longformer-like models
 
     @property
@@ -253,9 +253,9 @@ class IVILATokenClassificationPredictor(BaseSinglePageTokenClassificationPredict
 
     @property
     def REQUIRED_DOCUMENT_FIELDS(self) -> List:
-        base_reqs = [PagesFieldName, TokensFieldName]
+        base_reqs = [PagesLayerName, TokensLayerName]
         if self.predictor.preprocessor.config.agg_level == "row":
-            base_reqs.append(RowsFieldName)
+            base_reqs.append(RowsLayerName)
         elif self.predictor.preprocessor.config.agg_level == "block":
-            base_reqs.append(BlocksFieldName)
+            base_reqs.append(BlocksLayerName)
         return base_reqs

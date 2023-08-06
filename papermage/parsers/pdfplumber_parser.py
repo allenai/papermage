@@ -14,14 +14,14 @@ except:
 from papermage.magelib import (
     Box,
     Document,
-    EntitiesFieldName,
+    EntitiesLayerName,
     Entity,
     Metadata,
-    PagesFieldName,
-    RowsFieldName,
+    PagesLayerName,
+    RowsLayerName,
     Span,
-    SymbolsFieldName,
-    TokensFieldName,
+    SymbolsLayerName,
+    TokensLayerName,
 )
 from papermage.parsers.parser import Parser
 
@@ -350,11 +350,11 @@ class PDFPlumberParser(Parser):
             page_annos.append(page)
 
         return {
-            SymbolsFieldName: symbols,
-            EntitiesFieldName: {
-                TokensFieldName: [token.to_json() for token in token_annos],
-                RowsFieldName: [row.to_json() for row in row_annos],
-                PagesFieldName: [page.to_json() for page in page_annos],
+            SymbolsLayerName: symbols,
+            EntitiesLayerName: {
+                TokensLayerName: [token.to_json() for token in token_annos],
+                RowsLayerName: [row.to_json() for row in row_annos],
+                PagesLayerName: [page.to_json() for page in page_annos],
             },
         }
 

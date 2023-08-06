@@ -17,22 +17,24 @@ from papermage.magelib import (
     Span,
 )
 
-# document field names
-SymbolsFieldName = "symbols"
-ImagesFieldName = "images"
-MetadataFieldName = "metadata"
-EntitiesFieldName = "entities"
-RelationsFieldName = "relations"
+# document layer names
+SymbolsLayerName = "symbols"
+ImagesLayerName = "images"
+MetadataLayerName = "metadata"
+EntitiesLayerName = "entities"
+RelationsLayerName = "relations"
 
-PagesFieldName = "pages"
-TokensFieldName = "tokens"
-RowsFieldName = "rows"
-BlocksFieldName = "blocks"
-WordsFieldName = "words"
+PagesLayerName = "pages"
+TokensLayerName = "tokens"
+RowsLayerName = "rows"
+BlocksLayerName = "blocks"
+WordsLayerName = "words"
+SentencesLayerName = "sentences"
+ParagraphsLayerName = "paragraphs"
 
 
 class Document:
-    SPECIAL_FIELDS = [SymbolsFieldName, ImagesFieldName, MetadataFieldName, EntitiesFieldName, RelationsFieldName]
+    SPECIAL_FIELDS = [SymbolsLayerName, ImagesLayerName, MetadataLayerName, EntitiesLayerName, RelationsLayerName]
 
     def __init__(self, symbols: str, metadata: Optional[Metadata] = None):
         self.symbols = symbols
@@ -110,9 +112,9 @@ class Document:
         image_type = image_types.pop()
 
         if not issubclass(image_type, Image):
-            raise NotImplementedError(f"Unsupported image type {image_type} for {ImagesFieldName}")
+            raise NotImplementedError(f"Unsupported image type {image_type} for {ImagesLayerName}")
 
-        setattr(self, ImagesFieldName, images)
+        setattr(self, ImagesLayerName, images)
 
     def remove_images(self) -> None:
         raise NotImplementedError
@@ -132,31 +134,31 @@ class Document:
         """
         # 1) instantiate basic Document dict
         doc_dict = {
-            SymbolsFieldName: self.symbols,
-            MetadataFieldName: self.metadata.to_json(),
-            EntitiesFieldName: {},
-            RelationsFieldName: {},
+            SymbolsLayerName: self.symbols,
+            MetadataLayerName: self.metadata.to_json(),
+            EntitiesLayerName: {},
+            RelationsLayerName: {},
         }
 
         # 2) serialize each field to JSON
         field_names = list(self.__entity_span_indexers.keys()) if field_names is None else field_names
         for field_name in field_names:
-            doc_dict[EntitiesFieldName][field_name] = [entity.to_json() for entity in getattr(self, field_name)]
+            doc_dict[EntitiesLayerName][field_name] = [entity.to_json() for entity in getattr(self, field_name)]
 
         # 3) serialize images if `with_images == True`
         if with_images:
-            doc_dict[ImagesFieldName] = [image.to_base64() for image in getattr(self, ImagesFieldName)]
+            doc_dict[ImagesLayerName] = [image.to_base64() for image in getattr(self, ImagesLayerName)]
 
         return doc_dict
 
     @classmethod
     def from_json(cls, doc_json: Dict) -> "Document":
         # 1) instantiate basic Document
-        symbols = doc_json[SymbolsFieldName]
-        doc = cls(symbols=symbols, metadata=Metadata(**doc_json.get(MetadataFieldName, {})))
+        symbols = doc_json[SymbolsLayerName]
+        doc = cls(symbols=symbols, metadata=Metadata(**doc_json.get(MetadataLayerName, {})))
 
         # 2) instantiate entities
-        for field_name, entity_jsons in doc_json[EntitiesFieldName].items():
+        for field_name, entity_jsons in doc_json[EntitiesLayerName].items():
             entities = [Entity.from_json(entity_json=entity_json) for entity_json in entity_jsons]
             doc.annotate_entity(field_name=field_name, entities=entities)
 

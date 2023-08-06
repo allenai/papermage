@@ -9,16 +9,16 @@ from papermage.magelib import (
     Document,
     Entity,
     Image,
-    ImagesFieldName,
+    ImagesLayerName,
     Metadata,
-    PagesFieldName,
+    PagesLayerName,
 )
 from papermage.predictors.base_predictor import BasePredictor
 
 
 class LPBlockPredictor(BasePredictor):
     REQUIRED_BACKENDS = ["layoutparser"]
-    REQUIRED_DOCUMENT_FIELDS = [PagesFieldName, ImagesFieldName]
+    REQUIRED_DOCUMENT_FIELDS = [PagesLayerName, ImagesLayerName]
 
     def __init__(self, model):
         self.model = model
@@ -104,7 +104,7 @@ class LPBlockPredictor(BasePredictor):
         """
         document_prediction = []
 
-        images = doc.get_entity(field_name=ImagesFieldName)
+        images = doc.get_entity(field_name=ImagesLayerName)
         for image_index, image in enumerate(tqdm(images)):
             model_outputs = self.model.detect(image.pilimage)
             document_prediction.extend(self.postprocess(model_outputs, image_index, image))

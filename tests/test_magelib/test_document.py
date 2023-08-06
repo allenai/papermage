@@ -8,11 +8,11 @@ import unittest
 
 from papermage.magelib import (
     Document,
-    EntitiesFieldName,
+    EntitiesLayerName,
     Entity,
-    MetadataFieldName,
-    RelationsFieldName,
-    SymbolsFieldName,
+    MetadataLayerName,
+    RelationsLayerName,
+    SymbolsLayerName,
 )
 
 
@@ -53,10 +53,10 @@ class TestDocument(unittest.TestCase):
         self.assertDictEqual(
             doc.to_json(),
             {
-                SymbolsFieldName: symbols,
-                MetadataFieldName: {"a": {"b": "c"}},
-                EntitiesFieldName: {},
-                RelationsFieldName: {},
+                SymbolsLayerName: symbols,
+                MetadataLayerName: {"a": {"b": "c"}},
+                EntitiesLayerName: {},
+                RelationsLayerName: {},
             },
         )
 
@@ -64,10 +64,10 @@ class TestDocument(unittest.TestCase):
         metadata = {"a": {"b": "c"}}
         symbols = "Hey again peeps!"
         input_json = {
-            SymbolsFieldName: symbols,
-            MetadataFieldName: metadata,
-            EntitiesFieldName: {},
-            RelationsFieldName: {},
+            SymbolsLayerName: symbols,
+            MetadataLayerName: metadata,
+            EntitiesLayerName: {},
+            RelationsLayerName: {},
         }
 
         doc = Document.from_json(input_json)
@@ -78,10 +78,10 @@ class TestDocument(unittest.TestCase):
     def test_metadata_deserializes_when_empty(self):
         symbols = "That's all folks!"
         input_json = {
-            SymbolsFieldName: symbols,
-            MetadataFieldName: {},
-            EntitiesFieldName: {},
-            RelationsFieldName: {},
+            SymbolsLayerName: symbols,
+            MetadataLayerName: {},
+            EntitiesLayerName: {},
+            RelationsLayerName: {},
         }
 
         doc = Document.from_json(input_json)
