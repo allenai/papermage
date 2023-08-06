@@ -29,6 +29,8 @@ TokensFieldName = "tokens"
 RowsFieldName = "rows"
 BlocksFieldName = "blocks"
 WordsFieldName = "words"
+SentencesFieldName = "sentences"
+ParagraphsFieldName = "paragraphs"
 
 
 class Document:

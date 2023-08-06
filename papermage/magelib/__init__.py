@@ -25,7 +25,9 @@ from papermage.magelib.document import (
     RowsFieldName,
     BlocksFieldName,
     ImagesFieldName,
-    WordsFieldName
+    WordsFieldName,
+    SentencesFieldName,
+    ParagraphsFieldName
 )
 
 __all__ = [
@@ -47,5 +49,7 @@ __all__ = [
     "TokensFieldName",
     "RowsFieldName",
     "BlocksFieldName",
-    "WordsFieldName"
+    "WordsFieldName",
+    "SentencesFieldName",
+    "ParagraphsFieldName",
 ]
