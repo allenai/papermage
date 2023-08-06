@@ -130,7 +130,8 @@ predictors = [
     'wandb==0.15.7',
     'seqeval==1.2.2',
     'effdet==0.3.0',
-    'decontext==0.1.4',
+    'decontext@git+https://github.com/bnewm0609/qa-decontextualization.git@add_doc_index',
+    # 'decontext==0.1.4',
     'vila==0.5.0'
 ]
 production = [
