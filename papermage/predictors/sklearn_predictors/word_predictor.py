@@ -288,17 +288,12 @@ class SVMWordPredictor(BasePredictor):
         We keep this pretty minimal, such as ignoring Span Boxes since dont need
         them for word prediction."""
         new_tokens = []
-        current_id = 0
         for token in doc.tokens:
             if token.text.strip() != "":
-                new_token = Entity(
-                    spans=[Span(start=span.start, end=span.end) for span in token.spans],
-                    id=current_id,
-                )
+                new_token = Entity(spans=[Span(start=span.start, end=span.end) for span in token.spans])
                 new_tokens.append(new_token)
-                current_id += 1
         new_doc = Document(symbols=doc.symbols)
-        new_doc.annotate(tokens=new_tokens)
+        new_doc.annotate_entity(field_name="tokens", entities=new_tokens)
         return new_doc
 
     def _recursively_remove_trailing_hyphens(self, word: str) -> str:
@@ -492,15 +487,11 @@ class SVMWordPredictor(BasePredictor):
                 tokens_in_word.append(token)
             else:
                 spans = [
-                    Span.create_enclosing_span(
-                        spans=[span for token in tokens_in_word for span in token.spans],
-                        merge_boxes=False,
-                    )
+                    Span.create_enclosing_span(spans=[span for token in tokens_in_word for span in token.spans])
                 ]
                 metadata = Metadata(text=word_id_to_text[current_word_id]) if len(tokens_in_word) > 1 else None
                 word = Entity(
                     spans=spans,
-                    id=new_word_id,
                     metadata=metadata,
                 )
                 words.append(word)
@@ -508,16 +499,10 @@ class SVMWordPredictor(BasePredictor):
                 current_word_id = word_id
                 new_word_id += 1
         # last bit
-        spans = [
-            Span.create_enclosing_span(
-                spans=[span for token in tokens_in_word for span in token.spans],
-                merge_boxes=False,
-            )
-        ]
+        spans = [Span.create_enclosing_span(spans=[span for token in tokens_in_word for span in token.spans])]
         metadata = Metadata(text=word_id_to_text[current_word_id]) if len(tokens_in_word) > 1 else None
         word = Entity(
             spans=spans,
-            id=new_word_id,
             metadata=metadata,
         )
         words.append(word)
