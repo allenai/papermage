@@ -251,7 +251,9 @@ class HFBIOTaggerPredictorTrainer:
 
             return all_pytorch_batches
 
-    def load_docs_from_path(self, docs_path: Path, annotations_entity_names: Optional[List[str]] = None, prefix: str ="") -> DataLoader:
+    def load_docs_from_path(
+        self, docs_path: Path, annotations_entity_names: Optional[List[str]] = None, prefix: str = ""
+    ) -> DataLoader:
         # If pytorch tensors haven't been created and cached yet
         # preprocess the document to convert it to tensors and cache them
         preprocessed_batches = []
@@ -281,7 +283,6 @@ class HFBIOTaggerPredictorTrainer:
         annotations_entity_names: Optional[List[str]] = None,
         annotations_path: Optional[Path] = None,
     ):
-        
         train_dataloader = self.load_docs_from_path(
             docs_path=docs_path,
             annotations_entity_names=annotations_entity_names,
@@ -289,9 +290,7 @@ class HFBIOTaggerPredictorTrainer:
 
         if val_docs_path is not None:
             val_dataloader = self.load_docs_from_path(
-                docs_path=val_docs_path,
-                annotations_entity_names=annotations_entity_names,
-                prefix="val_"
+                docs_path=val_docs_path, annotations_entity_names=annotations_entity_names, prefix="val_"
             )
         else:
             val_dataloader = None
@@ -306,7 +305,7 @@ class HFBIOTaggerPredictorTrainer:
         self.predictor.model.to(self.device)
         if val_docs is not None:
             self.trainer.fit(self.predictor, train_docs)
-        else:    
+        else:
             self.trainer.fit(self.predictor, train_docs)
 
     def eval(self, docs_path: Path, annotations_entity_names: List[str]):
@@ -480,9 +479,7 @@ def main(config: HFBIOTaggerPredictorTrainConfig):
 
     if config.mode == "train":
         trainer.train(
-            docs_path=config.data_path,
-            val_docs_path=config.val_data_path,
-            annotations_entity_names=label_fields
+            docs_path=config.data_path, val_docs_path=config.val_data_path, annotations_entity_names=label_fields
         )
     elif config.mode == "eval":
         trainer.eval(docs_path=config.data_path, annotations_entity_names=label_fields)

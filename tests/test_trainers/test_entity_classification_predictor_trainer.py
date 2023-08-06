@@ -74,6 +74,7 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
         self.trainer.predictor.predictor.config.label2id = label2id
         self.trainer.train(
             docs_path=self.fixture_path / "predictor_training_docs_tiny.jsonl",
+            val_docs_path=None,
             annotations_entity_names=["words_starting_with_td"],
         )
 
