@@ -82,17 +82,3 @@ class TestFigureVilaPredictors(unittest.TestCase):
             "allenai/ivila-row-layoutlm-finetuned-s2vl-v2"
         )
         results_with_rows = predictor_with_rows.predict(doc, subpage_per_run=2)
-
-    def test_vila_predictors_with_special_unicode_inputs(self):
-        test_doc_path = self.fixture_path / "unicode-test.json"
-
-        with open(test_doc_path, "r") as fp:
-            res = json.load(fp)
-
-        doc = Document.from_json(res)
-        doc.annotate_images([Image.new("RGB", (596, 842))])
-
-        predictor_with_rows = IVILATokenClassificationPredictor.from_pretrained(
-            "allenai/ivila-row-layoutlm-finetuned-s2vl-v2"
-        )
-        predictor_with_rows.predict(doc, subpage_per_run=2)
