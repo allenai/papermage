@@ -43,7 +43,16 @@ class GrobidFullParser(Parser):
             "sleep_time": 5,
             "timeout": 60,
             "coordinates": [
-                "figure", "ref", "biblStruct", "formula", "s", "head", "p"
+                "figure",
+                "ref",
+                "biblStruct",
+                "formula",
+                "s",
+                "head",
+                "p",
+                "figure",
+                "table",
+                "abstract",
             ]
         }
         assert "coordinates" in self.grobid_config, \
