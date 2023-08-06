@@ -66,18 +66,18 @@ class Document:
         if field_name in self.SPECIAL_FIELDS:
             raise AssertionError(f"{field_name} not allowed Document.SPECIAL_FIELDS.")
         if field_name in self.__entity_span_indexers.keys():
-            raise AssertionError(f"{field_name} already exists. Try `doc.remove_entity({field_name})` first.")
+            raise AssertionError(f'{field_name} already exists. Try `doc.remove_entity("{field_name}")` first.')
         if field_name in dir(self):
             raise AssertionError(f"{field_name} clashes with Document class properties.")
 
     def get_entity(self, field_name: str) -> List[Entity]:
         return getattr(self, field_name)
 
-    def annotate(self, field_name: str, entiites: List[Entity]) -> None:
-        if isinstance(entiites[0], Entity):
-            self.annotate_entity(field_name=field_name, entities=entiites)
+    def annotate(self, field_name: str, entities: List[Entity]) -> None:
+        if all(isinstance(e, Entity) for e in entities):
+            self.annotate_entity(field_name=field_name, entities=entities)
         else:
-            raise NotImplementedError(f"Unsupported entity type {type(entiites[0])}")
+            raise NotImplementedError(f"entity list contains non-entities: {[type(e) for e in entities]}")
 
     def annotate_entity(self, field_name: str, entities: List[Entity]) -> None:
         self.check_field_name_availability(field_name=field_name)
