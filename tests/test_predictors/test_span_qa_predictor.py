@@ -14,10 +14,6 @@ class TestSpanQAPredictor(unittest.TestCase):
             test_doc_json = json.load(f)
         self.doc = Document.from_json(doc_json=test_doc_json)
 
-        # set the context ids:
-        for i, row in enumerate(self.doc.rows):
-            row.id = i
-
         user_selected_span = Entity(
             spans=[Span(start=2784, end=2803)], metadata=Metadata(question="What does this mean?")
         )
