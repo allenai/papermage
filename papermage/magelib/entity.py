@@ -30,8 +30,9 @@ class Entity(Annotation):
 
     def __repr__(self):
         if self.doc and self.spans:
-            symbols: List[str] = [self.doc.symbols[span.start : span.end] for span in self.spans]
-            return f"Entity\tSymbols\t{symbols}"
+            return f"Entity:\t{self.text}"
+        if self.doc and self.boxes:
+            return f"Entity:\t{self.text}"
         return f"Entity{self.to_json()}"
 
     def to_json(self) -> Dict:
@@ -60,18 +61,33 @@ class Entity(Annotation):
         return max([span.end for span in self.spans]) if len(self.spans) > 0 else float("inf")
 
     @property
-    def symbols(self) -> List[str]:
+    def symbols_from_spans(self) -> List[str]:
         if self.doc is not None:
             return [self.doc.symbols[span.start : span.end] for span in self.spans]
         else:
             return []
 
     @property
+    def symbols_from_boxes(self) -> List[str]:
+        if self.doc is not None:
+            matched_tokens = self.doc.find_by_box(query=self, field_name="tokens")
+            return [self.doc.symbols[span.start : span.end] for t in matched_tokens for span in t.spans]
+        else:
+            return []
+
+    @property
     def text(self) -> str:
+        # return stored metadata
         maybe_text = self.metadata.get("text", None)
-        if maybe_text is None:
-            return " ".join(self.symbols)
-        return maybe_text
+        if maybe_text:
+            return maybe_text
+        # return derived from symbols
+        if self.symbols_from_spans:
+            return " ".join(self.symbols_from_spans)
+        # return derived from boxes and tokens
+        if self.symbols_from_boxes:
+            return " ".join(self.symbols_from_boxes)
+        return ""
 
     @text.setter
     def text(self, text: Union[str, None]) -> None:

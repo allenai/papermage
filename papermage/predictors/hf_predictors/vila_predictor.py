@@ -120,7 +120,7 @@ def convert_document_page_to_pdf_dict(doc: Document, page_width: int, page_heigh
 
     token_data = [
         (
-            token.symbols[0],  # words
+            token.symbols_from_spans[0],  # words
             token.boxes[0].to_absolute(page_width=page_width, page_height=page_height).xy_coordinates,  # bbox
             get_visual_group_id(token, RowsFieldName, -1),  # line_ids
             get_visual_group_id(token, BlocksFieldName, -1),  # block_ids
