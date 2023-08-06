@@ -203,15 +203,17 @@ class TestDocument(unittest.TestCase):
         # test query by span
         self.assertListEqual(
             doc.find_by_span(query=doc.chunks[0], field_name="tokens"),
-            doc.find_by_span(query=doc.chunks[0].spans[0], field_name="tokens"),
+            doc.find(query=doc.chunks[0].spans[0], field_name="tokens"),
         )
         # test query by box
         self.assertListEqual(
             doc.find_by_box(query=doc.chunks[0], field_name="tokens"),
-            doc.find_by_box(query=doc.chunks[0].boxes[0], field_name="tokens"),
+            doc.find(query=doc.chunks[0].boxes[0], field_name="tokens"),
         )
         # calling wrong method w input type should fail
         with self.assertRaises(TypeError):
             doc.find_by_box(query=doc.chunks[0].spans[0], field_name="tokens")
         with self.assertRaises(TypeError):
             doc.find_by_span(query=doc.chunks[0].boxes[0], field_name="tokens")
+        with self.assertRaises(TypeError):
+            doc.find(query=doc.chunks[0], field_name="tokens")

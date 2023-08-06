@@ -44,27 +44,27 @@ class Document:
     def fields(self) -> List[str]:
         return list(self.__entity_span_indexers.keys()) + self.SPECIAL_FIELDS
 
-    def find_by_span(self, query: Union[Entity, Span], field_name: str) -> List[Entity]:
-        if isinstance(query, Entity):
-            return self.__entity_span_indexers[field_name].find(query=query)
-        elif isinstance(query, Span):
+    def find(self, query: Union[Span, Box], field_name: str) -> List[Entity]:
+        if isinstance(query, Span):
             return self.__entity_span_indexers[field_name].find(query=Entity(spans=[query]))
-        else:
-            raise TypeError(f"Unsupported query type {type(query)}")
-
-    def find_by_box(self, query: Union[Entity, Box], field_name: str) -> List[Entity]:
-        if isinstance(query, Entity):
-            return self.__entity_box_indexers[field_name].find(query=query)
         elif isinstance(query, Box):
             return self.__entity_box_indexers[field_name].find(query=Entity(boxes=[query]))
         else:
             raise TypeError(f"Unsupported query type {type(query)}")
 
+    def find_by_span(self, query: Entity, field_name: str) -> List[Entity]:
+        # TODO: will rename this to `intersect_by_span`
+        return self.__entity_span_indexers[field_name].find(query=query)
+
+    def find_by_box(self, query: Entity, field_name: str) -> List[Entity]:
+        # TODO: will rename this to `intersect_by_span`
+        return self.__entity_box_indexers[field_name].find(query=query)
+
     def check_field_name_availability(self, field_name: str) -> None:
         if field_name in self.SPECIAL_FIELDS:
             raise AssertionError(f"{field_name} not allowed Document.SPECIAL_FIELDS.")
         if field_name in self.__entity_span_indexers.keys():
-            raise AssertionError(f"{field_name} already exists. Try `is_overwrite=True`")
+            raise AssertionError(f"{field_name} already exists. Try `doc.remove_entity({field_name})` first.")
         if field_name in dir(self):
             raise AssertionError(f"{field_name} clashes with Document class properties.")
 
@@ -78,9 +78,9 @@ class Document:
             entity.doc = self
             entity.id = i
 
-        setattr(self, field_name, entities)
         self.__entity_span_indexers[field_name] = EntitySpanIndexer(entities=entities)
         self.__entity_box_indexers[field_name] = EntityBoxIndexer(entities=entities)
+        setattr(self, field_name, entities)
 
     def remove_entity(self, field_name: str):
         for entity in getattr(self, field_name):
