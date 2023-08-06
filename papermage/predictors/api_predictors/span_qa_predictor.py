@@ -9,7 +9,7 @@ from decontext.data_types import (
 )
 from decontext.step.qa import TemplateRetrievalQAStep
 
-from papermage.magelib import Annotation, Document
+from papermage.magelib import Annotation, Document, Entity
 from papermage.predictors.base_predictor import BasePredictor
 
 
@@ -42,13 +42,21 @@ class APISpanQAPredictor(BasePredictor):
             )
         )
 
+        context = getattr(getattr(doc, self.span_name)[0], self.context_unit_name)[0]
+        # Get the index of the context with the span
+        if context.id is not None:
+            context_index = context.id
+        else:
+            context_index = [i for i, c in enumerate(doc.get_entity(self.context_unit_name)) if c == context][0]
+
         paper_snippet = PaperSnippet(
             snippet=getattr(doc, self.span_name)[0].text,
             context=paper_context,
             qae=[],
             paragraph_with_snippet=EvidenceParagraph(
                 section="",
-                paragraph=getattr(getattr(doc, self.span_name)[0], self.context_unit_name)[0].text,
+                paragraph=context.text,
+                index=context_index,
             ),
         )
 
@@ -64,10 +72,28 @@ class APISpanQAPredictor(BasePredictor):
         self.retrieval_qa_step.run(paper_snippet)
 
         # postprocess to format back into papermage doc format
+        annotations: List[Annotation] = []
+
+        # add the question and answer to a copy of the user selected span
         user_selected_span = getattr(doc, self.span_name)
+        new_user_selected_span = Entity.from_json(user_selected_span[0].to_json())
+        new_user_selected_span.metadata["type"] = "answer"
+        new_user_selected_span.metadata["question"] = paper_snippet.qae[0].question
+        new_user_selected_span.metadata["answer"] = paper_snippet.qae[0].answer
+        annotations.append(new_user_selected_span)
+        
+        # add the context with span
+        context_with_span = getattr(getattr(doc, self.span_name)[0], self.context_unit_name)[0]
+        # context_with_span = doc.get_entity(self.context_unit_name)[paper_snippet.paragraph_with_snippet.index]
+        new_context_with_span = Entity.from_json(context_with_span.to_json())
+        new_context_with_span.metadata["type"] = "context_with_span"
+        annotations.append(new_context_with_span)
 
-        user_selected_span[0].metadata["answer"] = paper_snippet.qae[0].answer
-        user_selected_span[0].metadata["context_with_span"] = paper_snippet.paragraph_with_snippet.dict()
-        user_selected_span[0].metadata["retrieved_evidence"] = [ev.dict() for ev in paper_snippet.qae[0].evidence]
+        # add the evidence entities
+        for evidence in paper_snippet.qae[0].evidence:
+            entity = doc.get_entity(self.context_unit_name)[evidence.index]
+            new_entity = Entity.from_json(entity.to_json())
+            new_entity.metadata["type"] = "evidence"
+            annotations.append(new_entity)
 
-        return user_selected_span
+        return annotations
