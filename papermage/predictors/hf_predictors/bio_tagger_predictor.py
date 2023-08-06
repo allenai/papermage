@@ -5,7 +5,7 @@
 """
 
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -160,6 +160,18 @@ class HFBIOTaggerPredictor(BasePredictor):
         self.python_to_torch_mapper = Python2TorchMapper(device=self.model.device)
         # combining everything
         self.preprocess_mapper = self.tokenizer_mapper >> self.unpacking_mapper >> self.batch_size_mapper
+
+    @property
+    def device(self) -> torch.device:
+        device = self.model.device
+        device = torch.device(device) if isinstance(device, str) else device
+        return device
+
+    @device.setter
+    def device(self, device: Union[torch.device, str]) -> None:
+        device = torch.device(device) if isinstance(device, str) else device
+        self.model.to(device)
+        self.python_to_torch_mapper.device = device
 
     @classmethod
     def from_pretrained(
@@ -316,7 +328,7 @@ class HFBIOTaggerPredictor(BasePredictor):
     def _predict_batch(
         self,
         batch: BIOBatch,
-        device: Optional[str] = None
+        device: Union[None, str, torch.device] = None
     ) -> List[BIOPrediction]:
         #
         #   preprocessing!!  (padding & tensorification)

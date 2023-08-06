@@ -6,11 +6,24 @@ import tqdm
 from necessary import necessary
 from sklearn.metrics import classification_report
 
-from papermage.magelib import Document, Image
+from papermage.magelib import Document, Image, Entity, Span, Box, Metadata
 from papermage.predictors import HFBIOTaggerPredictor, IVILATokenClassificationPredictor
 
 with necessary("datasets"):
     import datasets
+
+
+def from_json(cls, entity_json: dict) -> "Entity":
+    # the .get(..., None) or [] pattern is to handle the case where the key is present but the value is None
+    return cls(
+        spans=[Span.from_json(span_json=span_json) for span_json in entity_json.get("spans", None) or []],
+        boxes=[Box.from_json(box_json=box_json) for box_json in entity_json.get("boxes", None) or []],
+        metadata=Metadata.from_json(entity_json.get("metadata", None) or {}),
+    )
+
+
+Entity.from_json = classmethod(from_json)   # type: ignore
+
 
 ap = ArgumentParser()
 ap.add_argument("vila", choices=["new", "old", "grobid"])

@@ -31,7 +31,9 @@ class Span:
     def __repr__(self):
         return f'Span{self.to_json()}'
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Span):
+            return False
         return self.start == other.start and self.end == other.end
 
     def __lt__(self, other: 'Span'):
