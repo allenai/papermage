@@ -125,3 +125,10 @@ class TestCoreRecipe(unittest.TestCase):
             == doc_json["entities"]["blocks"]
             == [b.to_json() for b in self.doc.blocks]
         )
+
+    def test_can_load_pdfs(self):
+        # or from scratch
+        recipe = CoreRecipe()
+        doc = recipe.from_path(pdfpath=self.fixture_path / "2304.02623v1.pdf")
+        doc = recipe.from_path(pdfpath=self.fixture_path / "2020.acl-main.447.pdf")
+        doc = recipe.from_path(pdfpath=self.fixture_path / "4be952924cd565488b4a239dc6549095029ee578.pdf")
