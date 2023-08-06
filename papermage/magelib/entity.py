@@ -29,11 +29,9 @@ class Entity(Annotation):
         super().__init__()
 
     def __repr__(self):
-        if self.doc and self.spans:
-            return f"Entity:\t{self.text}"
-        if self.doc and self.boxes:
-            return f"Entity:\t{self.text}"
-        return f"Entity{self.to_json()}"
+        if self.doc:
+            return f"Annotated Entity:\tSpans: {True if self.spans else False}\tBoxes: {True if self.boxes else False}\nText: {self.text}"
+        return f"Unannotated Entity: {self.to_json()}"
 
     def to_json(self) -> Dict:
         entity_dict = dict(
