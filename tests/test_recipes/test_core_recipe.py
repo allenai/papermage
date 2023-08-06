@@ -41,7 +41,7 @@ def round_all_floats(d: dict):
 
 class TestCoreRecipe(unittest.TestCase):
     def setUp(self):
-        self.fixture_path = pathlib.Path(__file__).parent / "fixtures"
+        self.fixture_path = pathlib.Path(__file__).parent.parent / "fixtures"
         self.recipe = CoreRecipe()
 
     def test_stability(self):
