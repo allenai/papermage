@@ -3,70 +3,117 @@
 @geli-gel
 
 """
-from collections import defaultdict
 import json
-import re
-from tempfile import NamedTemporaryFile
-from grobid_client.grobid_client import GrobidClient
-from typing import Any, Dict, Optional, List
-
 import os
+import re
 import xml.etree.ElementTree as et
+from collections import defaultdict
+from tempfile import NamedTemporaryFile
+from typing import Any, Dict, List, Optional, cast
 
-from papermage.parsers.parser import Parser
-from papermage.magelib import Metadata, Document, TokensFieldName, PagesFieldName, RowsFieldName, Entity, Annotation
+import numpy as np
+from grobid_client.grobid_client import GrobidClient
+
+from papermage.magelib import (
+    Annotation,
+    Document,
+    Entity,
+    Metadata,
+    PagesFieldName,
+    RowsFieldName,
+    Span,
+    TokensFieldName,
+)
 from papermage.magelib.box import Box
+from papermage.magelib.span import MergeClusterSpans
+from papermage.parsers.parser import Parser
 
 REQUIRED_DOCUMENT_FIELDS = [PagesFieldName, RowsFieldName, TokensFieldName]
 NS = {"tei": "http://www.tei-c.org/ns/1.0"}
 
 
+GROBID_VILA_MAP = {
+    # title has no coordinates, not recoverable
+    "title": ("Title",),
+    # author has no coordinates, but they can be recovered from combining 'persName'
+    "author": ("Author",),
+    # abstract has no coordinates, but they can be recovered from combining 's'
+    "abstract": ("Abstract",),
+    # keywords has no coordinates, not recoverable
+    "keywords": ("Keywords",),
+    # sections are easily available. compared to VILA, section number is extracted and
+    # reported as metadata.
+    "head": ("Section",),
+    # paragraph has no coordinates, but they can be recovered from combining 's'
+    "p": ("Paragraph",),
+    # list has no coordinates, but they can be recovered from combining 'item'
+    "list": ("List",),
+    "biblStruct": ("Bibliography",),
+    "formula": ("Equation",),
+    # tables are enclosed into figures, need to check
+    "figure": ("Figure",),
+    "table": ("Table",),
+    # figDesc is caption for both tables and figures
+    "figDesc": ("Caption",),
+    # header and footers get merged into notes fields, but these are kinda tricky to
+    # recover because things like author affiliations are also in the notes fields.
+    # also, no coordinates.
+    # for footnotes, need to check if this is of type "foot"
+    "note": (
+        "Header",
+        "Footer",
+        "Footnote",
+    ),
+}
+
+
+def find_zero_spans(array):
+    # Add a sentinel value at the end to not miss end of last span
+    array = np.append(array, 1)
+
+    # Find the indexes where the array changes
+    diff_indices = np.where(np.diff(array) != 0)[0] + 1
+    # Find the start and end indexes of zero spans
+    zero_start_indices = diff_indices[:-1:2]
+    zero_end_indices = diff_indices[1::2] - 1
+
+    spans = list(zip(zero_start_indices, zero_end_indices))
+
+    # Exclude the spans with no element
+    spans = [(start, end + 1) for start, end in spans if end - start >= 0]
+
+    return spans
+
+
 class GrobidFullParser(Parser):
     """Grobid parser that uses Grobid python client to hit a running
-     Grobid server and convert resulting grobid XML TEI coordinates into
-     PaperMage Annotations to annotate an existing Document.
+    Grobid server and convert resulting grobid XML TEI coordinates into
+    PaperMage Annotations to annotate an existing Document.
 
-     Run a Grobid server (from https://grobid.readthedocs.io/en/latest/Grobid-docker/):
-     > docker pull lfoppiano/grobid:0.7.2
-     > docker run -t --rm -p 8070:8070 lfoppiano/grobid:0.7.2
+    Run a Grobid server (from https://grobid.readthedocs.io/en/latest/Grobid-docker/):
+    > docker pull lfoppiano/grobid:0.7.2
+    > docker run -t --rm -p 8070:8070 lfoppiano/grobid:0.7.2
     """
 
-    def __init__(
-            self,
-            grobid_config: Optional[dict] = None,
-            check_server: bool = True
-    ):
-
+    def __init__(self, grobid_config: Optional[dict] = None, check_server: bool = True):
         self.grobid_config = grobid_config or {
             "grobid_server": "http://localhost:8070",
             "batch_size": 1000,
             "sleep_time": 5,
             "timeout": 60,
-            "coordinates": [
-                "figure", "ref", "biblStruct", "formula", "s", "head", "p"
-            ]
+            "coordinates": sorted(set((*GROBID_VILA_MAP.keys(), "s", "ref", "body", "item", "persName"))),
         }
-        assert "coordinates" in self.grobid_config, \
-            "Grobid config must contain 'coordinates' key"
+        assert "coordinates" in self.grobid_config, "Grobid config must contain 'coordinates' key"
 
-        with NamedTemporaryFile(mode='w', delete=False) as f:
+        with NamedTemporaryFile(mode="w", delete=False) as f:
             json.dump(self.grobid_config, f)
             config_path = f.name
 
-        self.client = GrobidClient(
-            config_path=config_path,
-            check_server=check_server
-        )
+        self.client = GrobidClient(config_path=config_path, check_server=check_server)
 
         os.remove(config_path)
 
-    def parse(
-            self,
-            input_pdf_path: str,
-            doc: Document,
-            xml_out_dir: Optional[str] = None
-    ) -> Document:
-
+    def parse(self, input_pdf_path: str, doc: Document, xml_out_dir: Optional[str] = None) -> Document:
         assert doc.symbols != ""
         for field in REQUIRED_DOCUMENT_FIELDS:
             assert field in doc.fields
@@ -80,26 +127,149 @@ class GrobidFullParser(Parser):
             include_raw_citations=False,
             include_raw_affiliations=False,
             tei_coordinates=True,
-            segment_sentences=True
+            segment_sentences=True,
         )
+        assert xml is not None, "Grobid returned no XML"
 
         if xml_out_dir:
             os.makedirs(xml_out_dir, exist_ok=True)
-            xmlfile = os.path.join(
-                xml_out_dir,
-                os.path.basename(input_pdf_path).replace('.pdf', '.xml')
-            )
-            with open(xmlfile, 'w') as f_out:
+            xmlfile = os.path.join(xml_out_dir, os.path.basename(input_pdf_path).replace(".pdf", ".xml"))
+            with open(xmlfile, "w") as f_out:
                 f_out.write(xml)
 
         self._parse_xml_onto_doc(xml, doc)
 
         for p in doc.p:
-            grobid_text = [s.metadata['grobid_text'] for s in p.s]
-            grobid_text = ' '.join(filter(lambda text: type(text) == str, grobid_text))
-            p.metadata['grobid_text'] = grobid_text
+            grobid_text_elems = [s.metadata["grobid_text"] for s in p.s]
+            grobid_text = " ".join(filter(lambda text: isinstance(text, str), grobid_text_elems))
+            p.metadata["grobid_text"] = grobid_text
+
+        # add vila-like entities
+        doc.annotate_entity(entities=self._make_vila_groups(doc), field_name="vila_entities")
 
         return doc
+
+    def _make_spans_from_boxes(self, doc: Document, entity: Entity) -> List[Span]:
+        tokens = [cast(Entity, t) for match in doc.find_by_box(entity, "tokens") for t in match.tokens]
+        spans = MergeClusterSpans(sorted(set(s for t in tokens for s in t.spans), key=lambda x: x.start)).merge()
+        return spans
+
+    def _make_spans_from_boxes_if_not_found(self, doc: Document, entity: Entity) -> List[Span]:
+        spans = [Span(start=s.start, end=s.end) for s in entity.spans]
+        if not spans:
+            spans = self._make_spans_from_boxes(doc, entity)
+        return spans
+
+    def _make_entities_of_type(
+        self, doc: Document, entities: List[Entity], entity_type: str, id_offset: int = 0
+    ) -> List[Entity]:
+        entities = [
+            Entity(
+                spans=self._make_spans_from_boxes_if_not_found(doc=doc, entity=ent),
+                boxes=[Box(l=b.l, t=b.t, w=b.w, h=b.h, page=b.page) for b in ent.boxes],
+                metadata=Metadata(**ent.metadata.to_json(), label=entity_type, id=id_offset + i),
+            )
+            for i, ent in enumerate(entities)
+        ]
+        return entities
+
+    def _update_reserved_positions(self, reserved_positions: np.ndarray, entities: List[Entity]) -> List[Entity]:
+        new_entities: List[Entity] = []
+        for ent in entities:
+            new_spans = []
+            for span in ent.spans:
+                already_reserved = reserved_positions[span.start : span.end]
+                for start, end in find_zero_spans(already_reserved):
+                    new_spans.append(Span(start=start, end=end))
+                reserved_positions[span.start : span.end] = True
+            if new_spans:
+                new_entities.append(Entity(spans=new_spans, boxes=ent.boxes, metadata=ent.metadata))
+        return new_entities
+
+    def _make_vila_groups(self, doc: Document) -> List[Entity]:
+        ents: List[Entity] = []
+        reserved_positions = np.zeros(len(doc.symbols), dtype=bool)
+
+        if _ := getattr(doc, "title", []):
+            # title has no coordinates, so we can't recover its position!
+            pass
+
+        if h := getattr(doc, "author", []):
+            h_ = self._make_entities_of_type(doc=doc, entities=h, entity_type="Author", id_offset=len(ents))
+            h_ = self._update_reserved_positions(reserved_positions, h_)
+            ents.extend(h_)
+
+        if a := getattr(doc, "abstract", []):
+            a_ = self._make_entities_of_type(doc=doc, entities=a, entity_type="Abstract", id_offset=len(ents))
+            a_ = self._update_reserved_positions(reserved_positions, a_)
+            ents.extend(a_)
+
+        if _ := getattr(doc, "keywords", []):
+            # keywords has no coordinates, so we can't recover their positions!
+            pass
+
+        if s := getattr(doc, "head", []):
+            s_ = self._make_entities_of_type(doc=doc, entities=s, entity_type="Section", id_offset=len(ents))
+            s_ = self._update_reserved_positions(reserved_positions, s_)
+            ents.extend(s_)
+
+        if l := getattr(doc, "list", []):
+            l_ = self._make_entities_of_type(doc=doc, entities=l, entity_type="List", id_offset=len(ents))
+            l_ = self._update_reserved_positions(reserved_positions, l_)
+            ents.extend(l_)
+
+        if b := getattr(doc, "biblStruct", []):
+            b_ = self._make_entities_of_type(doc=doc, entities=b, entity_type="Bibliography", id_offset=len(ents))
+            b_ = self._update_reserved_positions(reserved_positions, b_)
+            ents.extend(b_)
+
+        if e := getattr(doc, "formula", []):
+            e_ = self._make_entities_of_type(doc=doc, entities=e, entity_type="Equation", id_offset=len(ents))
+            e_ = self._update_reserved_positions(reserved_positions, e_)
+            ents.extend(e_)
+
+        if figures := getattr(doc, "figure", []):
+            for figure in figures:
+                current_boxes = [Box(l=b.l, t=b.t, w=b.w, h=b.h, page=b.page) for b in figure.boxes]
+
+                if "figDesc" in doc.fields:
+                    caption_boxes = [b for d in doc.find_by_box(figure, "figDesc") for b in d.boxes]
+                    current_boxes = [b for b in current_boxes if b not in caption_boxes]
+
+                if "table" in doc.fields:
+                    table_boxes = [b for d in doc.find_by_box(figure, "table") for b in d.boxes]
+                    current_boxes = [b for b in current_boxes if b not in table_boxes]
+
+                if not current_boxes:
+                    continue
+
+                new_figure = Entity(
+                    spans=None,
+                    boxes=current_boxes,
+                    metadata=Metadata(**figure.metadata.to_json(), type="Figure", id=len(ents)),
+                )
+                ents.append(new_figure)
+
+        if t := getattr(doc, "table", []):
+            t_ = self._make_entities_of_type(doc=doc, entities=t, entity_type="Table", id_offset=len(ents))
+            t_ = self._update_reserved_positions(reserved_positions, t_)
+            ents.extend(t_)
+
+        if c := getattr(doc, "figDesc", []):
+            c_ = self._make_entities_of_type(doc=doc, entities=c, entity_type="Caption", id_offset=len(ents))
+            c_ = self._update_reserved_positions(reserved_positions, c_)
+            ents.extend(c_)
+
+        if _ := getattr(doc, "note", []):
+            # notes have no coordinates, so we can't recover their positions!
+            pass
+
+        if p := getattr(doc, "p", []):
+            p_ = self._make_entities_of_type(doc=doc, entities=p, entity_type="Paragraph", id_offset=len(ents))
+            p_ = self._update_reserved_positions(reserved_positions, p_)
+            ents.extend(p_)
+
+        return ents
 
     def _parse_xml_onto_doc(self, xml: str, doc: Document) -> Document:
         xml_root = et.fromstring(xml)
@@ -129,13 +299,9 @@ class GrobidFullParser(Parser):
             pg, x, y, w, h = coords.split(",")
             proper_page = int(pg) - 1
             boxes.append(
-                Box(
-                    l=float(x),
-                    t=float(y),
-                    w=float(w),
-                    h=float(h),
-                    page=proper_page
-                ).to_relative(*page_sizes[proper_page])
+                Box(l=float(x), t=float(y), w=float(w), h=float(h), page=proper_page).to_relative(
+                    *page_sizes[proper_page]
+                )
             )
         return boxes
 
@@ -146,9 +312,7 @@ class GrobidFullParser(Parser):
         page_size_data = page_size_root.findall(".//tei:surface", NS)
         page_sizes = dict()
         for data in page_size_data:
-            page_sizes[int(data.attrib["n"]) - 1] = [
-                float(data.attrib["lrx"]), float(data.attrib["lry"])
-            ]
+            page_sizes[int(data.attrib["n"]) - 1] = [float(data.attrib["lrx"]), float(data.attrib["lry"])]
 
         all_boxes: Dict[str, List[Annotation]] = defaultdict(list)
 
@@ -156,11 +320,8 @@ class GrobidFullParser(Parser):
             structs = root.findall(f".//tei:{field}", NS)
             for i, struct in enumerate(structs):
                 if (coords_str := struct.attrib.get("coords", None)) is None:
-                    all_coords = struct.findall('.//*[@coords]')
-                    coords_str = ";".join([
-                        c.attrib["coords"] for c in all_coords
-                        if "coords" in c.attrib
-                    ])
+                    all_coords = struct.findall(".//*[@coords]")
+                    coords_str = ";".join([c.attrib["coords"] for c in all_coords if "coords" in c.attrib])
 
                 if coords_str == "":
                     continue
@@ -168,20 +329,23 @@ class GrobidFullParser(Parser):
                 boxes = self._xml_coords_to_boxes(coords_str, page_sizes)
                 metadata_dict: Dict[str, Any] = {
                     f"grobid_{re.sub(r'[^a-zA-Z0-9_]+', '_', k)}": v
-                    for k, v in struct.attrib.items() if k != "coords"
+                    for k, v in struct.attrib.items()
+                    if k != "coords"
                 }
                 metadata_dict["grobid_order"] = i
                 metadata_dict["grobid_text"] = struct.text
                 metadata = Metadata.from_json(metadata_dict)
                 box_group = Entity(boxes=boxes, metadata=metadata)
+                print(box_group)
                 all_boxes[field].append(box_group)
 
         return all_boxes
 
 
 if __name__ == "__main__":
-    from papermage.parsers import PDFPlumberParser
     from argparse import ArgumentParser
+
+    from papermage.parsers import PDFPlumberParser
 
     ap = ArgumentParser()
     ap.add_argument("pdf_path", type=str)

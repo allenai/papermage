@@ -13,7 +13,6 @@ import torch
 import transformers
 
 from papermage.magelib import Document, Entity, Span
-from papermage.parsers import PDFPlumberParser
 from papermage.predictors import HFBIOTaggerPredictor
 from papermage.trainers.bio_tagger_predictor_trainer import (
     HFBIOTaggerPredictorTrainConfig,
