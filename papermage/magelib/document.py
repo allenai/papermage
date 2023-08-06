@@ -73,6 +73,12 @@ class Document:
     def get_entity(self, field_name: str) -> List[Entity]:
         return getattr(self, field_name)
 
+    def annotate(self, field_name: str, entiites: List[Entity]) -> None:
+        if isinstance(entiites[0], Entity):
+            self.annotate_entity(field_name=field_name, entities=entiites)
+        else:
+            raise NotImplementedError(f"Unsupported entity type {type(entiites[0])}")
+
     def annotate_entity(self, field_name: str, entities: List[Entity]) -> None:
         self.check_field_name_availability(field_name=field_name)
 
