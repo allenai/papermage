@@ -5,10 +5,27 @@
 """
 
 import logging
+from pathlib import Path
+from typing import Union
 
 logger = logging.getLogger(__name__)
 
-from papermage.magelib import Document, Entity
+from papermage.magelib import (
+    BlocksFieldName,
+    Document,
+    EntitiesFieldName,
+    Entity,
+    ImagesFieldName,
+    MetadataFieldName,
+    PagesFieldName,
+    ParagraphsFieldName,
+    RelationsFieldName,
+    RowsFieldName,
+    SentencesFieldName,
+    SymbolsFieldName,
+    TokensFieldName,
+    WordsFieldName,
+)
 from papermage.parsers.pdfplumber_parser import PDFPlumberParser
 from papermage.predictors import (
     HFBIOTaggerPredictor,
@@ -46,6 +63,18 @@ class CoreRecipe(Recipe):
         self.sent_predictor = PysbdSentencePredictor()
         logger.info("Finished instantiating recipe")
 
+    def run(self, pdf: Union[str, Path, Document]) -> Document:
+        if isinstance(pdf, str):
+            pdf = Path(pdf)
+            assert pdf.exists(), f"File {pdf} does not exist."
+        assert isinstance(
+            pdf, (Document, Path)
+        ), f"Unsupported type {type(pdf)} for pdf; should be a Document or a path to a PDF file."
+        if isinstance(pdf, Path):
+            self.from_path(str(pdf))
+        else:
+            raise NotImplementedError("Document input not yet supported.")
+
     def from_path(self, pdfpath: str) -> Document:
         logger.info("Parsing document...")
         doc = self.parser.parse(input_pdf_path=pdfpath)
@@ -53,14 +82,15 @@ class CoreRecipe(Recipe):
         logger.info("Rasterizing document...")
         images = self.rasterizer.rasterize(input_pdf_path=pdfpath, dpi=72)
         doc.annotate_images(images=list(images))
+        self.rasterizer.attach_images(images=images, doc=doc)
 
         logger.info("Predicting words...")
         words = self.word_predictor.predict(doc=doc)
-        doc.annotate_entity(field_name="words", entities=words)
+        doc.annotate_entity(field_name=WordsFieldName, entities=words)
 
         logger.info("Predicting sentences...")
         sentences = self.sent_predictor.predict(doc=doc)
-        doc.annotate_entity(field_name="sentences", entities=sentences)
+        doc.annotate_entity(field_name=SentencesFieldName, entities=sentences)
 
         logger.info("Predicting blocks...")
         layout = self.effdet_publaynet_predictor.predict(doc=doc)
@@ -75,7 +105,7 @@ class CoreRecipe(Recipe):
         # blocks are used by IVILA, so we need to annotate them as well
         # copy the entities because they already have docs attached
         blocks = [Entity.from_json(ent.to_json()) for ent in layout + equations]
-        doc.annotate_entity(field_name="blocks", entities=blocks)
+        doc.annotate_entity(field_name=BlocksFieldName, entities=blocks)
 
         logger.info("Predicting vila...")
         vila_entities = self.ivila_predictor.predict(doc=doc)
