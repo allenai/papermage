@@ -115,15 +115,18 @@ class GrobidFullParser(Parser):
         os.remove(config_path)
 
     def parse(  # type: ignore
-        self, input_pdf_path: str, doc: Document, xml_out_dir: Optional[str] = None
+        self,
+        input_pdf_path: str,
+        doc: Document,
+        xml_out_dir: Optional[str] = None
     ) -> Document:
         assert doc.symbols != ""
         for field in REQUIRED_DOCUMENT_FIELDS:
             assert field in doc.fields
 
         (_, _, xml) = self.client.process_pdf(
-            "processFulltextDocument",
-            input_pdf_path,
+            service="processFulltextDocument",
+            pdf_file=input_pdf_path,
             generateIDs=False,
             consolidate_header=False,
             consolidate_citations=False,
@@ -140,7 +143,7 @@ class GrobidFullParser(Parser):
             with open(xmlfile, "w") as f_out:
                 f_out.write(xml)
 
-        self._parse_xml_onto_doc(xml, doc)
+        self._parse_xml_onto_doc(xml=xml, doc=doc)
 
         for p in getattr(doc, "p", []):
             grobid_text_elems = [s.metadata["grobid_text"] for s in p.s]
@@ -233,27 +236,28 @@ class GrobidFullParser(Parser):
             e__, reserved_positions = self._update_reserved_positions(reserved_positions, e_)
             ents.extend(e__)
 
-        if figures := getattr(doc, "figure", []):
-            for figure in figures:
-                current_boxes = [Box(l=b.l, t=b.t, w=b.w, h=b.h, page=b.page) for b in figure.boxes]
+        if figs := getattr(doc, "figure", []):
+            for fig in figs:
+                current_boxes = [Box(l=b.l, t=b.t, w=b.w, h=b.h, page=b.page) for b in fig.boxes]
 
                 if "figDesc" in doc.fields:
-                    caption_boxes = [b for d in doc.find_by_box(figure, "figDesc") for b in d.boxes]
+                    caption_boxes = [b for d in doc.find_by_box(fig, "figDesc") for b in d.boxes]
                     current_boxes = [b for b in current_boxes if b not in caption_boxes]
 
                 if "table" in doc.fields:
-                    table_boxes = [b for d in doc.find_by_box(figure, "table") for b in d.boxes]
+                    table_boxes = [b for d in doc.find_by_box(fig, "table") for b in d.boxes]
                     current_boxes = [b for b in current_boxes if b not in table_boxes]
 
                 if not current_boxes:
                     continue
 
-                new_figure = Entity(
-                    spans=None,
+                new_fig = Entity(
+                    spans=self._make_spans_from_boxes(doc, Entity(boxes=current_boxes)),
                     boxes=current_boxes,
-                    metadata=Metadata(**figure.metadata.to_json(), type="Figure", id=len(ents)),
+                    metadata=Metadata(**fig.metadata.to_json(), label="Figure", id=len(ents)),
                 )
-                ents.append(new_figure)
+                new_figs, reserved_positions = self._update_reserved_positions(reserved_positions, [new_fig])
+                ents.extend(new_figs)
 
         if t := getattr(doc, "table", []):
             t_ = self._make_entities_of_type(doc=doc, entities=t, entity_type="Table", id_offset=len(ents))
@@ -291,10 +295,13 @@ class GrobidFullParser(Parser):
 
         return doc
 
-    def _xml_coords_to_boxes(self, coords_attribute: str, page_sizes: dict):
+    def _xml_coords_to_boxes(self, coords_attribute: str, page_sizes: dict) -> List[Box]:
         coords_list = coords_attribute.split(";")
         boxes = []
         for coords in coords_list:
+            if coords == "":
+                # this page has no coordinates
+                continue
             pg, x, y, w, h = coords.split(",")
             proper_page = int(pg) - 1
             boxes.append(
@@ -325,7 +332,11 @@ class GrobidFullParser(Parser):
                 if coords_str == "":
                     continue
 
-                boxes = self._xml_coords_to_boxes(coords_str, page_sizes)
+                if not (boxes := self._xml_coords_to_boxes(coords_str, page_sizes)):
+                    # we check if the boxes are empty because sometimes users monkey-patch
+                    # _xml_coords_to_boxes to filter by page
+                    continue
+
                 metadata_dict: Dict[str, Any] = {
                     f"grobid_{re.sub(r'[^a-zA-Z0-9_]+', '_', k)}": v
                     for k, v in struct.attrib.items()
