@@ -5,17 +5,16 @@
 
 """
 
-from typing import Dict, Iterable, List, Optional, Union
+from itertools import chain
+from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 
-from papermage.magelib import (
-    Box,
-    Entity,
-    EntityBoxIndexer,
-    EntitySpanIndexer,
-    Image,
-    Metadata,
-    Span,
-)
+from .span import Span
+from .box import Box
+from .image import Image
+from .metadata import Metadata
+from .entity import Entity
+from .indexer import EntitySpanIndexer, EntityBoxIndexer
+
 
 # document field names
 SymbolsFieldName = "symbols"
@@ -31,6 +30,28 @@ BlocksFieldName = "blocks"
 WordsFieldName = "words"
 SentencesFieldName = "sentences"
 ParagraphsFieldName = "paragraphs"
+
+# these come from vila
+TitlesFieldName = "titles"
+AuthorsFieldName = "authors"
+AbstractsFieldName = "abstracts"
+KeywordsFieldName = "keywords"
+SectionsFieldName = "sections"
+ListsFieldName = "lists"
+BibliographiesFieldName = "bibliographies"
+EquationsFieldName = "equations"
+AlgorithmsFieldName = "algorithms"
+FiguresFieldName = "figures"
+TablesFieldName = "tables"
+CaptionsFieldName = "captions"
+HeadersFieldName = "headers"
+FootersFieldName = "footers"
+FootnotesFieldName = "footnotes"
+
+
+class Prediction(NamedTuple):
+    name: str
+    entities: List[Entity]
 
 
 class Document:
@@ -73,11 +94,10 @@ class Document:
     def get_entity(self, field_name: str) -> List[Entity]:
         return getattr(self, field_name)
 
-    def annotate(self, field_name: str, entities: List[Entity]) -> None:
-        if all(isinstance(e, Entity) for e in entities):
-            self.annotate_entity(field_name=field_name, entities=entities)
-        else:
-            raise NotImplementedError(f"entity list contains non-entities: {[type(e) for e in entities]}")
+    def annotate(self, *predictions: Union[Prediction, Tuple[Prediction, ...]]) -> None:
+        all_preds = chain.from_iterable([p] if isinstance(p, Prediction) else p for p in predictions)
+        for prediction in all_preds:
+            self.annotate_entity(field_name=prediction.name, entities=prediction.entities)
 
     def annotate_entity(self, field_name: str, entities: List[Entity]) -> None:
         self.check_field_name_availability(field_name=field_name)

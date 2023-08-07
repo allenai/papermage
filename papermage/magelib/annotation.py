@@ -8,13 +8,11 @@ Document object directly from within the Entity itself.
 
 """
 
-import logging
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 if TYPE_CHECKING:
-    # from papermage.types.document import Document
-    pass
+    from .document import Document
 
 
 class Annotation:

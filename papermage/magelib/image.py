@@ -7,7 +7,6 @@ Monkey patch the PIL.Image methods to add base64 conversion
 """
 
 import base64
-import logging
 import os
 from io import BytesIO
 

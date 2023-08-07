@@ -7,7 +7,7 @@ represents the word 'This' in the string 'This is a document.'
 
 """
 
-from typing import List, Optional, Dict, Tuple, List
+from typing import List, Dict, List
 
 from collections import defaultdict
 
