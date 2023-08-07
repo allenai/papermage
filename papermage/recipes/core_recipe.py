@@ -6,7 +6,8 @@
 
 import logging
 from pathlib import Path
-from typing import Union
+from typing import Dict, List, Union
+import warnings
 from papermage.predictors.sklearn_predictors.word_predictor import make_text
 
 from papermage.utils.annotate import group_by
@@ -21,6 +22,7 @@ from papermage.magelib import (
     Document,
     EntitiesFieldName,
     Entity,
+    Box,
     EquationsFieldName,
     FiguresFieldName,
     FootersFieldName,
@@ -90,7 +92,10 @@ class CoreRecipe(Recipe):
         self.parser = PDFPlumberParser()
         self.rasterizer = PDF2ImageRasterizer()
 
-        self.word_predictor = SVMWordPredictor.from_path(svm_word_predictor_path)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.word_predictor = SVMWordPredictor.from_path(svm_word_predictor_path)
+
         self.effdet_publaynet_predictor = LPBlockPredictor.from_pretrained(effdet_publaynet_predictor_path)
         # self.effdet_mfd_predictor = LPBlockPredictor.from_pretrained(effdet_mfd_predictor_path)
         self.ivila_predictor = IVILATokenClassificationPredictor.from_pretrained(ivila_predictor_path)
@@ -126,6 +131,7 @@ class CoreRecipe(Recipe):
 
     def from_doc(self, doc: Document) -> Document:
         self.logger.info("Predicting words...")
+
         words = self.word_predictor.predict(doc=doc)
         doc.annotate_entity(field_name=WordsFieldName, entities=words)
 
@@ -134,15 +140,24 @@ class CoreRecipe(Recipe):
         doc.annotate_entity(field_name=SentencesFieldName, entities=sentences)
 
         self.logger.info("Predicting blocks...")
-        blocks = self.effdet_publaynet_predictor.predict(doc=doc)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            blocks = self.effdet_publaynet_predictor.predict(doc=doc)
         doc.annotate_entity(field_name=BlocksFieldName, entities=blocks)
 
         self.logger.info("Predicting vila...")
         vila_entities = self.ivila_predictor.predict(doc=doc)
-        for entity in vila_entities:
-            entity.text = make_text(entity=entity, document=doc)
         doc.annotate_entity(field_name="vila_entities", entities=vila_entities)
+
+        for entity in vila_entities:
+            entity.boxes = [
+                Box.create_enclosing_box(
+                    [b for t in doc.find_by_span(entity, field_name=TokensFieldName) for b in t.boxes]
+                )
+            ]
+            entity.text = make_text(entity=entity, document=doc)
         preds = group_by(entities=vila_entities, metadata_field="label", metadata_values_map=VILA_LABELS_MAP)
+        breakpoint()
         doc.annotate(*preds)
 
         return doc
