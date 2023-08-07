@@ -7,6 +7,7 @@
 import logging
 from pathlib import Path
 from typing import Union
+from papermage.predictors.sklearn_predictors.word_predictor import make_text
 
 from papermage.utils.annotate import group_by
 
@@ -28,7 +29,6 @@ from papermage.magelib import (
     ImagesFieldName,
     KeywordsFieldName,
     ListsFieldName,
-    MetadataFieldName,
     PagesFieldName,
     ParagraphsFieldName,
     RelationsFieldName,
@@ -139,6 +139,8 @@ class CoreRecipe(Recipe):
 
         self.logger.info("Predicting vila...")
         vila_entities = self.ivila_predictor.predict(doc=doc)
+        for entity in vila_entities:
+            entity.text = make_text(entity=entity, document=doc)
         doc.annotate_entity(field_name="vila_entities", entities=vila_entities)
         group_by(doc=doc, entities=vila_entities, metadata_field="label", metadata_values_map=VILA_LABELS_MAP)
 

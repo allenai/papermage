@@ -17,20 +17,37 @@ import re
 import tarfile
 import tempfile
 from collections import defaultdict
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set, Tuple, Union
 from urllib.parse import urlparse
 
-import numpy as np
 import requests
 from joblib import load
 from scipy.sparse import hstack
 
-from papermage.magelib import Document, Entity, Metadata, Span
+from papermage.magelib import Document, Entity, Metadata, Span, WordsFieldName, Annotation
 from papermage.parsers.pdfplumber_parser import PDFPlumberParser
 from papermage.predictors.base_predictor import BasePredictor
 from papermage.predictors.hf_predictors.whitespace_predictor import WhitespacePredictor
 
+
 logger = logging.getLogger(__name__)
+
+
+def make_text(entity: Union[Entity, Annotation], document: Document, field: str = WordsFieldName) -> str:
+    candidate_words = document.find_by_span(entity, field)
+    candidate_text: List[str] = []
+
+    for i in range(len(candidate_words)):
+        candidate_text.append(str(candidate_words[i].text))
+        if i < len(candidate_words) - 1:
+            next_word_start = candidate_words[i + 1].start
+            curr_word_end = candidate_words[i].end
+            assert isinstance(next_word_start, int), f"{candidate_words[i + 1]} has no span (non-int start)"
+            assert isinstance(curr_word_end, int), f"{candidate_words[i]} has no span (non-int end)"
+            if curr_word_end != next_word_start:
+                candidate_text.append(document.symbols[curr_word_end : next_word_start])
+
+    return "".join(candidate_text)
 
 
 class IsWordResult:

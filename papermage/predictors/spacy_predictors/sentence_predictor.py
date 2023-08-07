@@ -80,7 +80,7 @@ class PysbdSentencePredictor(BasePredictor):
     """
 
     REQUIRED_BACKENDS = ["pysbd"]
-    REQUIRED_DOCUMENT_FIELDS = [PagesFieldName, TokensFieldName]  # type: ignore
+    REQUIRED_DOCUMENT_FIELDS = [TokensFieldName]  # type: ignore
 
     def __init__(self) -> None:
         self._segmenter = pysbd.Segmenter(language="en", clean=False, char_span=True)
