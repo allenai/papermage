@@ -37,6 +37,26 @@ from papermage.predictors.base_predictor import BasePredictor
 MAX_PAGE_WIDTH = 1000
 MAX_PAGE_HEIGHT = 1000
 
+# these are the labels that are used in the VILA model
+VILA_LABELS = [
+    "Title",
+    "Author",
+    "Abstract",
+    "Keywords",
+    "Section",
+    "Paragraph",
+    "List",
+    "Bibliography",
+    "Equation",
+    "Algorithm",
+    "Figure",
+    "Table",
+    "Caption",
+    "Header",
+    "Footer",
+    "Footnote"
+]
+
 
 # util
 def columns_used_in_model_inputs(model):

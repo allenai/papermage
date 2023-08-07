@@ -11,7 +11,7 @@ from typing import List, Optional, Tuple, Union
 
 import numpy as np
 
-from papermage.magelib import Span
+from .span import Span
 
 
 class _BoxSpan(Span):

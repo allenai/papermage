@@ -7,49 +7,80 @@ Needs to be imported in this order.
 """
 
 
-from papermage.magelib.image import Image
-from papermage.magelib.span import Span
-from papermage.magelib.box import Box
-from papermage.magelib.metadata import Metadata
-from papermage.magelib.annotation import Annotation
-from papermage.magelib.entity import Entity
-from papermage.magelib.indexer import EntitySpanIndexer, EntityBoxIndexer
-from papermage.magelib.document import Document
-from papermage.magelib.document import (
-    MetadataFieldName,
-    EntitiesFieldName,
-    SymbolsFieldName,
-    RelationsFieldName,
-    PagesFieldName,
-    TokensFieldName,
-    RowsFieldName,
+from .annotation import Annotation
+from .box import Box
+from .document import (
+    AbstractsFieldName,
+    AlgorithmsFieldName,
+    AuthorsFieldName,
+    BibliographiesFieldName,
     BlocksFieldName,
+    CaptionsFieldName,
+    Document,
+    EntitiesFieldName,
+    EquationsFieldName,
+    FiguresFieldName,
+    FootersFieldName,
+    FootnotesFieldName,
+    HeadersFieldName,
     ImagesFieldName,
-    WordsFieldName,
+    KeywordsFieldName,
+    ListsFieldName,
+    MetadataFieldName,
+    PagesFieldName,
+    ParagraphsFieldName,
+    RelationsFieldName,
+    RowsFieldName,
+    SectionsFieldName,
     SentencesFieldName,
-    ParagraphsFieldName
+    SymbolsFieldName,
+    TablesFieldName,
+    TitlesFieldName,
+    TokensFieldName,
+    WordsFieldName,
 )
+from .entity import Entity
+from .image import Image
+from .indexer import EntityBoxIndexer, EntitySpanIndexer
+from .metadata import Metadata
+from .span import Span
 
 __all__ = [
-    "Document",
-    "Annotation" "Entity",
-    "Relation",
-    "Span",
-    "Box",
-    "Image",
-    "Metadata",
-    "EntitySpanIndexer",
-    "EntityBoxIndexer",
-    "ImageFieldName",
-    "SymbolsFieldName",
-    "MetadataFieldName",
-    "EntitiesFieldName",
-    "RelationsFieldName",
-    "PagesFieldName",
-    "TokensFieldName",
-    "RowsFieldName",
+    "AbstractsFieldName",
+    "AlgorithmsFieldName",
+    "Annotation",
+    "AuthorsFieldName",
+    "BibliographiesFieldName",
     "BlocksFieldName",
-    "WordsFieldName",
-    "SentencesFieldName",
+    "Box",
+    "CaptionsFieldName",
+    "Document",
+    "EntitiesFieldName",
+    "Entity",
+    "EntityBoxIndexer",
+    "EntitySpanIndexer",
+    "EquationsFieldName",
+    "FiguresFieldName",
+    "FootersFieldName",
+    "FootnotesFieldName",
+    "HeadersFieldName",
+    "Image",
+    "ImagesFieldName",
+    "KeywordsFieldName",
+    "KeywordsFieldName",
+    "ListsFieldName",
+    "Metadata",
+    "MetadataFieldName",
+    "PagesFieldName",
     "ParagraphsFieldName",
+    "RelationsFieldName",
+    "RowsFieldName",
+    "SectionsFieldName",
+    "SentencesFieldName",
+    "Span",
+    "SymbolsFieldName",
+    "TablesFieldName",
+    "TitlesFieldName",
+    "TokensFieldName",
+    "WordsFieldName",
 ]

@@ -12,7 +12,9 @@ from typing import List
 import numpy as np
 from ncls import NCLS
 
-from papermage.magelib import Annotation, Box, Entity
+from .annotation import Annotation
+from .box import Box
+from .entity import Entity
 
 
 class Indexer:

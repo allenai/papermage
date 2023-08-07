@@ -19,6 +19,7 @@ from papermage.magelib import (
     Span,
     TokensFieldName,
     WordsFieldName,
+    Annotation
 )
 from papermage.predictors.base_predictor import BasePredictor
 
@@ -119,7 +120,7 @@ class PysbdSentencePredictor(BasePredictor):
             token_id_start = token_id_end
         return split
 
-    def predict(self, doc: Document) -> List[Entity]:
+    def _predict(self, doc: Document) -> List[Annotation]:
         if hasattr(doc, WordsFieldName):
             words = [word.text for word in getattr(doc, WordsFieldName)]
             attr_name = WordsFieldName
@@ -131,7 +132,7 @@ class PysbdSentencePredictor(BasePredictor):
 
         split = self.split_token_based_on_sentences_boundary(words)
 
-        sentence_spans = []
+        sentence_spans: List[Annotation] = []
         for start, end in split:
             if end - start == 0:
                 continue
