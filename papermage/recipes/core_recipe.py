@@ -157,7 +157,6 @@ class CoreRecipe(Recipe):
             ]
             entity.text = make_text(entity=entity, document=doc)
         preds = group_by(entities=vila_entities, metadata_field="label", metadata_values_map=VILA_LABELS_MAP)
-        breakpoint()
         doc.annotate(*preds)
 
         return doc
