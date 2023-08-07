@@ -5,7 +5,8 @@
 
 """
 
-from typing import Dict, List, NamedTuple, Optional, Union
+from itertools import chain
+from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 
 from .span import Span
 from .box import Box
@@ -93,8 +94,9 @@ class Document:
     def get_entity(self, field_name: str) -> List[Entity]:
         return getattr(self, field_name)
 
-    def annotate(self, *predictions) -> None:
-        for prediction in predictions:
+    def annotate(self, *predictions: Union[Prediction, Tuple[Prediction, ...]]) -> None:
+        all_preds = chain.from_iterable([p] if isinstance(p, Prediction) else p for p in predictions)
+        for prediction in all_preds:
             self.annotate_entity(field_name=prediction.name, entities=prediction.entities)
 
     def annotate_entity(self, field_name: str, entities: List[Entity]) -> None:
