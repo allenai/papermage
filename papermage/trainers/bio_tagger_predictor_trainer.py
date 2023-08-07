@@ -79,6 +79,8 @@ class HFCheckpoint(pl.Callback):
         pl_module.predictor.model.save_pretrained(self.save_dir)
         pl_module.predictor.tokenizer.save_pretrained(self.save_dir)
 
+        trainer.logged_metrics.get("val_loss")
+
         # don't want to save the state twice bc it might be big. But not saving it might cause issues if we want
         # to load the model later, that's a TODO for now.
         # del checkpoint["state_dict"]
@@ -271,6 +273,8 @@ class HFBIOTaggerPredictorTrainer:
             print(f"Loading precomputed input batches from: {cache_file}")
             preprocessed_batches = torch.load(cache_file)
 
+        # if not prefix:
+        #     preprocessed_batches = preprocessed_batches[:10]  # just for now, do a small amount of training.
         # create the dataloader
         preprocessed_batches = [{k: v.to(self.device) for k, v in batch.items()} for batch in preprocessed_batches]
         docs_dataloader = DataLoader(preprocessed_batches, batch_size=None)  # disable automatic batching
@@ -304,9 +308,9 @@ class HFBIOTaggerPredictorTrainer:
         self.predictor.num_training_steps = len(train_docs) * self.config.max_epochs
         self.predictor.model.to(self.device)
         if val_docs is not None:
-            self.trainer.fit(self.predictor, train_docs)
+            self.trainer.fit(model=self.predictor, train_dataloaders=train_docs, val_dataloaders=val_docs)
         else:
-            self.trainer.fit(self.predictor, train_docs)
+            self.trainer.fit(model=self.predictor, train_dataloaders=train_docs)
 
     def eval(self, docs_path: Path, annotations_entity_names: List[str]):
         """This is going to be a bit different from just calling `predict` on the predictor.
