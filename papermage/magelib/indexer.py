@@ -78,7 +78,7 @@ class EntitySpanIndexer(Indexer):
 
     def find(self, query: Entity) -> List[Entity]:
         if not isinstance(query, Entity):
-            raise ValueError(f"EntityIndexer only works with `query` that is Entity type")
+            raise TypeError(f"EntityIndexer only works with `query` that is Entity type")
 
         if not query.spans:
             return []
@@ -159,7 +159,7 @@ class EntityBoxIndexer(Indexer):
 
     def find(self, query: Entity) -> List[Entity]:
         if not isinstance(query, Entity):
-            raise ValueError(f"EntityBoxIndexer only works with `query` that is Entity type")
+            raise TypeError(f"EntityBoxIndexer only works with `query` that is Entity type")
 
         if not query.boxes:
             return []

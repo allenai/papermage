@@ -1,10 +1,10 @@
 [project]
 name = 'papermage'
-version = '0.5.1'
+version = '0.10.0'
 description = 'Papermage. Casting magic over scientific PDFs.'
 license = {text = 'Apache-2.0'}
 readme = 'README.md'
-requires-python = '>=3.8'
+requires-python = '>=3.8,<3.11'
 dependencies = [
         'tqdm',
         'pdf2image',
@@ -15,7 +15,8 @@ dependencies = [
         'pandas<2',
         'ncls==0.0.66',
         'necessary>=0.3.2',
-        'grobid-client-python==0.0.5'
+        'grobid-client-python==0.0.5',
+        'charset-normalizer',
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -92,6 +93,7 @@ where = ['.',]
 [tool.setuptools.package-data]
 papermage = [
     '../requirements.txt',
+    'py.typed',
 ]
 
 [build-system]
@@ -100,7 +102,7 @@ requires = [
     'setuptools >= 61.0.0',
     'pip >= 21.0.0',
     'wheel',
-    'cython'
+    'Cython==0.29.36'
 ]
 
 [project.optional-dependencies]
@@ -130,7 +132,8 @@ predictors = [
     'wandb==0.15.7',
     'seqeval==1.2.2',
     'effdet==0.3.0',
-    'decontext==0.1.4',
+    'decontext==0.1.5',
+    'vila==0.5.0'
 ]
 production = [
     'optimum[onnxruntime]==1.4.0'

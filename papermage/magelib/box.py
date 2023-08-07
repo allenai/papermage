@@ -7,14 +7,23 @@ Rectangular region on a document.
 """
 
 import logging
-from typing import Dict, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 
 from papermage.magelib import Span
 
 
+class _BoxSpan(Span):
+    def __init__(self, start: float, end: float):
+        self.start = start  # type: ignore
+        self.end = end  # type: ignore
+
+
 class Box:
+
+    __slots__ = ["l", "t", "w", "h", "page"]
+
     def __init__(self, l: float, t: float, w: float, h: float, page: int):
         assert w >= 0.0, "Box width cant be negative"
         assert h >= 0.0, "Box height cant be negative"
@@ -73,6 +82,17 @@ class Box:
     def xy_coordinates(self) -> Tuple[float, float, float, float]:
         return self.l, self.t, self.l + self.w, self.t + self.h
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Box):
+            return False
+        return (
+            self.l == other.l
+            and self.t == other.t
+            and self.w == other.w
+            and self.h == other.h
+            and self.page == other.page
+        )
+
     def to_relative(self, page_width: float, page_height: float) -> "Box":
         """Get the relative coordinates of self based on page_width, page_height."""
         return self.__class__(
@@ -107,14 +127,14 @@ class Box:
         other_x1, other_y1, other_x2, other_y2 = other.xy_coordinates
 
         # check x-axis
-        span_x_self = Span(start=self_x1, end=self_x2)
-        span_x_other = Span(start=other_x1, end=other_x2)
+        span_x_self = _BoxSpan(start=self_x1, end=self_x2)
+        span_x_other = _BoxSpan(start=other_x1, end=other_x2)
         if not span_x_self.is_overlap(span_x_other):
             return False
 
         # check y-axis
-        span_y_self = Span(start=self_y1, end=self_y2)
-        span_y_other = Span(start=other_y1, end=other_y2)
+        span_y_self = _BoxSpan(start=self_y1, end=self_y2)
+        span_y_other = _BoxSpan(start=other_y1, end=other_y2)
         if not span_y_self.is_overlap(span_y_other):
             return False
 

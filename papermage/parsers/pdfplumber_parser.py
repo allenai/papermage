@@ -24,6 +24,7 @@ from papermage.magelib import (
     TokensFieldName,
 )
 from papermage.parsers.parser import Parser
+from papermage.utils.text import maybe_normalize
 
 _TOL = Union[int, float]
 
@@ -210,7 +211,7 @@ class PDFPlumberParser(Parser):
                 fine_tokens = [
                     {
                         "text": token["text"],
-                        "fontname": token["fontname"],
+                        "fontname": maybe_normalize(token["fontname"]),
                         "size": token["size"],
                         "bbox": Box.from_xy_coordinates(
                             x1=float(token["x0"]),
@@ -249,15 +250,6 @@ class PDFPlumberParser(Parser):
                 dims=all_page_dims,
             )
             doc = Document.from_json(doc_json)
-
-            # now set ids for all of the attributes that were added
-            # NOTE: to set an `id` for an entity, it needs to have a `doc` attribute. These do not have to
-            # explicitly be set here because `Document.from_json` will set the `doc` attribute.
-            # All that's left is to set the `id` attribute.
-            added_entities = [TokensFieldName, RowsFieldName, PagesFieldName]
-            for entity_name in added_entities:
-                for entity_i, entity in enumerate(getattr(doc, entity_name)):
-                    entity.id = entity_i
             return doc
 
     def _convert_nested_text_to_doc_json(

@@ -57,6 +57,18 @@ class HFBioTaggerPredictorWrapper(pl.LightningModule):
         # is this the default context we should use?
         return self.predictor.preprocess(doc, context_name)
 
+    def on_train_start(self) -> None:
+        self.predictor.device = self.device
+        return super().on_train_start()
+
+    def on_validation_start(self) -> None:
+        self.predictor.device = self.device
+        return super().on_validation_start()
+
+    def on_test_start(self) -> None:
+        self.predictor.device = self.device
+        return super().on_test_start()
+
     def __getattr__(self, name):
         """Allow access to the predictor's attributes if the wrapper doesn't have them."""
         if name not in self.__dict__:

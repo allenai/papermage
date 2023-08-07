@@ -16,14 +16,18 @@ from papermage.magelib.entity import Entity
 from papermage.magelib.indexer import EntitySpanIndexer, EntityBoxIndexer
 from papermage.magelib.document import Document
 from papermage.magelib.document import (
-    MetadataFieldName, 
-    EntitiesFieldName, 
+    MetadataFieldName,
+    EntitiesFieldName,
     SymbolsFieldName,
-    RelationsFieldName, 
-    PagesFieldName, 
-    TokensFieldName, 
+    RelationsFieldName,
+    PagesFieldName,
+    TokensFieldName,
     RowsFieldName,
-    ImagesFieldName
+    BlocksFieldName,
+    ImagesFieldName,
+    WordsFieldName,
+    SentencesFieldName,
+    ParagraphsFieldName
 )
 
 __all__ = [
@@ -44,4 +48,8 @@ __all__ = [
     "PagesFieldName",
     "TokensFieldName",
     "RowsFieldName",
+    "BlocksFieldName",
+    "WordsFieldName",
+    "SentencesFieldName",
+    "ParagraphsFieldName",
 ]
