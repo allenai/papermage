@@ -142,6 +142,7 @@ class CoreRecipe(Recipe):
         for entity in vila_entities:
             entity.text = make_text(entity=entity, document=doc)
         doc.annotate_entity(field_name="vila_entities", entities=vila_entities)
-        group_by(doc=doc, entities=vila_entities, metadata_field="label", metadata_values_map=VILA_LABELS_MAP)
+        preds = group_by(entities=vila_entities, metadata_field="label", metadata_values_map=VILA_LABELS_MAP)
+        doc.annotate(*preds)
 
         return doc

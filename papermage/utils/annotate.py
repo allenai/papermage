@@ -1,16 +1,13 @@
 import re
-from typing import Dict, List, TypeVar, Union, Optional
-from papermage.magelib import Entity, Document, Annotation
-
-D = TypeVar('D', bound=Document)
+from typing import Dict, List, Tuple, Union, Optional
+from papermage.magelib import Entity, Annotation, Prediction
 
 
 def group_by(
-        doc: D,
         entities: List[Union[Entity, Annotation]],
         metadata_field: str,
         metadata_values_map: Optional[Dict[str, str]] = None
-) -> D:
+) -> Tuple[Prediction, ...]:
     """Group entities by the value of a field in metadata. After grouping,
     entities are annotated onto the document object.
 
@@ -44,7 +41,7 @@ def group_by(
         )
         groups.setdefault(mt_val, []).append(new_entity)
 
-    for group_name, group_entities in groups.items():
-        doc.annotate_entity(entities=group_entities, field_name=group_name)
-
-    return doc
+    return tuple(
+        Prediction(name=group_name, entities=group_entities)
+        for group_name, group_entities in groups.items()
+    )
