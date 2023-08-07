@@ -71,7 +71,7 @@ class CoreRecipe(Recipe):
             pdf, (Document, Path)
         ), f"Unsupported type {type(pdf)} for pdf; should be a Document or a path to a PDF file."
         if isinstance(pdf, Path):
-            self.from_path(str(pdf))
+            return self.from_path(str(pdf))
         else:
             raise NotImplementedError("Document input not yet supported.")
 
