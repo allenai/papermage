@@ -12,7 +12,7 @@ import transformers
 
 from papermage.magelib import Document, Entity, Span
 from papermage.parsers import PDFPlumberParser
-from papermage.predictors import HFBIOTaggerPredictor
+from papermage.predictors.hf_predictors.bio_tagger_predictor import HFBIOTaggerPredictor, BIOPrediction
 
 TEST_SCIBERT_WEIGHTS = "allenai/scibert_scivocab_uncased"
 
@@ -95,14 +95,17 @@ class TestBioTaggerPredictor(unittest.TestCase):
             assert isinstance(token_tag.metadata.label, str)
             assert isinstance(token_tag.metadata.score, float)
 
-    # def test_predict_with_null_labels(self):
-    #     # doc = recipe.from_path(pdfpath=self.fixture_path / "2304.02623v1.json")
-
-    #     with open(self.fixture_path / "2304.02623v1.json", "r") as f:
-    #         doc_with_nulls_json = json.load(f)
-    #     doc = Document.from_json(doc_json=doc_with_nulls_json)
-
-    #     "allenai/vila-roberta-large-s2vl-internal"
-    #     HFBIOTaggerPredictor.from_pretrained(
-    #         model_name_or_path=TEST_SCIBERT_WEIGHTS, entity_name="tokens", context_name="pages"
+    # def test_postprocess(self):
+    #     self.predictor.postprocess(
+    #         doc=self.doc,
+    #         context_name="pages",
+    #         preds=[
+    #             BIOPrediction(context_id=0, entity_id=0, label="B-Label", score=0.4),
+    #             BIOPrediction(context_id=0, entity_id=1, label="I-Label", score=0.2),
+    #             BIOPrediction(context_id=0, entity_id=2, label="O", score=0.3),
+    #             BIOPrediction(context_id=0, entity_id=3, label=None, score=None),
+    #             BIOPrediction(context_id=0, entity_id=4, label="B-Label", score=0.4),
+    #             BIOPrediction(context_id=0, entity_id=5, label=None, score=None),
+    #             BIOPrediction(context_id=0, entity_id=6, label="I-Label", score=0.2),
+    #         ],
     #     )
