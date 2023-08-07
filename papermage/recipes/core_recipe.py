@@ -158,5 +158,19 @@ class CoreRecipe(Recipe):
             entity.text = make_text(entity=entity, document=doc)
         preds = group_by(entities=vila_entities, metadata_field="label", metadata_values_map=VILA_LABELS_MAP)
         doc.annotate(*preds)
-
         return doc
+
+
+if __name__ == "__main__":
+    import argparse
+    import json
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--pdf", required=True, type=str, help="Path to PDF file.")
+    parser.add_argument("--output", type=str, help="Path to output JSON file.")
+    args = parser.parse_args()
+
+    recipe = CoreRecipe()
+    doc = recipe.from_path(pdfpath=args.pdf)
+    with open(args.output, "w") as f:
+        json.dump(doc.to_json(), f, indent=2)
