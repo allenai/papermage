@@ -11,8 +11,8 @@ import unittest
 
 import numpy as np
 
+from papermage.magelib import Box, Document, Entity, Span
 from papermage.parsers import PDFPlumberParser
-from papermage.types import Box, Document, Entity, Span
 
 
 class TestPDFPlumberParser(unittest.TestCase):

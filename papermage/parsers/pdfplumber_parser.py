@@ -1,6 +1,6 @@
 import itertools
 import string
-from typing import List, Optional, Union, Tuple
+from typing import List, Optional, Tuple, Union
 
 import pdfplumber
 
@@ -11,9 +11,20 @@ except:
     # pdfplumber <= 0.7.6
     import pdfplumber.utils as ppu
 
+from papermage.magelib import (
+    Box,
+    Document,
+    EntitiesFieldName,
+    Entity,
+    Metadata,
+    PagesFieldName,
+    RowsFieldName,
+    Span,
+    SymbolsFieldName,
+    TokensFieldName,
+)
 from papermage.parsers.parser import Parser
-from papermage.types import Entity, Box, Document, Metadata, Span
-from papermage.types.document import PagesFieldName, RowsFieldName, SymbolsFieldName, TokensFieldName, EntitiesFieldName
+from papermage.utils.text import maybe_normalize
 
 _TOL = Union[int, float]
 
@@ -148,9 +159,7 @@ class PDFPlumberParser(Parser):
         self.use_text_flow = use_text_flow
         self.horizontal_ltr = horizontal_ltr
         self.vertical_ttb = vertical_ttb
-        self.extra_attrs = (
-            extra_attrs if extra_attrs is not None else ["fontname", "size"]
-        )
+        self.extra_attrs = extra_attrs if extra_attrs is not None else ["fontname", "size"]
         if split_at_punctuation is True:
             split_at_punctuation = type(self).DEFAULT_PUNCTUATION_CHARS
         self.split_at_punctuation = split_at_punctuation
@@ -202,7 +211,7 @@ class PDFPlumberParser(Parser):
                 fine_tokens = [
                     {
                         "text": token["text"],
-                        "fontname": token["fontname"],
+                        "fontname": maybe_normalize(token["fontname"]),
                         "size": token["size"],
                         "bbox": Box.from_xy_coordinates(
                             x1=float(token["x0"]),
@@ -212,9 +221,7 @@ class PDFPlumberParser(Parser):
                             page_width=float(page.width),
                             page_height=float(page.height),
                             page=int(page_id),
-                        ).to_relative(
-                            page_width=float(page.width), page_height=float(page.height)
-                        ),
+                        ).to_relative(page_width=float(page.width), page_height=float(page.height)),
                     }
                     for token in fine_tokens
                 ]
@@ -228,13 +235,9 @@ class PDFPlumberParser(Parser):
                 assert len(line_ids_of_fine_tokens) == len(fine_tokens)
                 # 6) accumulate
                 all_tokens.extend(fine_tokens)
-                all_row_ids.extend(
-                    [i + last_row_id + 1 for i in line_ids_of_fine_tokens]
-                )
+                all_row_ids.extend([i + last_row_id + 1 for i in line_ids_of_fine_tokens])
                 last_row_id = all_row_ids[-1]
-                all_word_ids.extend(
-                    [i + last_word_id + 1 for i in word_ids_of_fine_tokens]
-                )
+                all_word_ids.extend([i + last_word_id + 1 for i in word_ids_of_fine_tokens])
                 last_word_id = all_word_ids[-1]
                 for _ in fine_tokens:
                     all_page_ids.append(page_id)
@@ -247,15 +250,6 @@ class PDFPlumberParser(Parser):
                 dims=all_page_dims,
             )
             doc = Document.from_json(doc_json)
-            
-            # now set ids for all of the attributes that were added
-            # NOTE: to set an `id` for an entity, it needs to have a `doc` attribute. These do not have to
-            # explicitly be set here because `Document.from_json` will set the `doc` attribute.
-            # All that's left is to set the `id` attribute.
-            added_entities = [TokensFieldName, RowsFieldName, PagesFieldName]
-            for entity_name in added_entities:
-                for entity_i, entity in enumerate(getattr(doc, entity_name)):
-                    entity.id = entity_i
             return doc
 
     def _convert_nested_text_to_doc_json(
@@ -323,13 +317,10 @@ class PDFPlumberParser(Parser):
 
         # 2) build rows
         tokens_with_group_ids = [
-            (token, row_id, page_id)
-            for token, row_id, page_id in zip(token_annos, row_ids, page_ids)
+            (token, row_id, page_id) for token, row_id, page_id in zip(token_annos, row_ids, page_ids)
         ]
         row_annos: List[Entity] = []
-        for row_id, tups in itertools.groupby(
-            iterable=tokens_with_group_ids, key=lambda tup: tup[1]
-        ):
+        for row_id, tups in itertools.groupby(iterable=tokens_with_group_ids, key=lambda tup: tup[1]):
             row_tokens = [token for token, _, _ in tups]
             row = Entity(
                 spans=[
@@ -339,15 +330,12 @@ class PDFPlumberParser(Parser):
                     )
                 ],
                 boxes=[Box.create_enclosing_box(boxes=[box for t in row_tokens for box in t.boxes])],
-                
             )
             row_annos.append(row)
 
         # 3) build pages
         page_annos: List[Entity] = []
-        for page_id, tups in itertools.groupby(
-            iterable=tokens_with_group_ids, key=lambda tup: tup[2]
-        ):
+        for page_id, tups in itertools.groupby(iterable=tokens_with_group_ids, key=lambda tup: tup[2]):
             page_tokens = [token for token, _, _ in tups]
             page_w, page_h, page_unit = dims[page_id]
             page = Entity(
@@ -357,7 +345,6 @@ class PDFPlumberParser(Parser):
                         end=page_tokens[-1].spans[0].end,
                     )
                 ],
-                
                 boxes=[Box.create_enclosing_box(boxes=[box for t in page_tokens for box in t.boxes])],
                 metadata=Metadata(width=page_w, height=page_h, user_unit=page_unit),
             )
@@ -419,14 +406,10 @@ class PDFPlumberParser(Parser):
 
         return lines
 
-    def _align_coarse_and_fine_tokens(
-        self, coarse_tokens: List[str], fine_tokens: List[str]
-    ) -> List[int]:
+    def _align_coarse_and_fine_tokens(self, coarse_tokens: List[str], fine_tokens: List[str]) -> List[int]:
         """Returns a list of length len(fine_tokens) where elements of the list are
         integer indices into coarse_tokens elements."""
-        assert len(coarse_tokens) <= len(
-            fine_tokens
-        ), f"This method requires |coarse| <= |fine|"
+        assert len(coarse_tokens) <= len(fine_tokens), f"This method requires |coarse| <= |fine|"
         assert "".join(coarse_tokens) == "".join(
             fine_tokens
         ), f"This method requires the chars(coarse) == chars(fine)"

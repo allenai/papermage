@@ -1,6 +1,5 @@
 /pdfs/
 /temp/
-scripts/
 notebooks/
 lightning_logs/
 
@@ -123,7 +122,6 @@ resources/
 tmp/
 symbolscraper-log.csv
 output/
-docs/
 .devcontainer/
 SymbolScraper/
 .coverage.*

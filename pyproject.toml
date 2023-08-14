@@ -1,6 +1,6 @@
 [project]
 name = 'papermage'
-version = '0.0.1'
+version = '0.11.1'
 description = 'Papermage. Casting magic over scientific PDFs.'
 license = {text = 'Apache-2.0'}
 readme = 'README.md'
@@ -15,7 +15,8 @@ dependencies = [
         'pandas<2',
         'ncls==0.0.68',
         'necessary>=0.3.2',
-        'unidecode>=1.3.4'
+        'grobid-client-python==0.0.5',
+        'charset-normalizer',
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -23,9 +24,13 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
-[[project.authors]]
-name = "Allen Institute for Artificial Intelligence"
-email = "contact@allenai.org"
+[[project.maintainers]]
+name = "Kyle Lo"
+email = "kylel@allenai.org"
+
+[[project.maintainers]]
+name = "Luca Soldaini"
+email = "luca@soldaini.net"
 
 [[project.authors]]
 name = "Kyle Lo"
@@ -48,9 +53,28 @@ name = "Russell Authur"
 email = "russell.authur@gmail.com"
 
 [[project.authors]]
+name = "Stefan Candra"
+email = "stefanc@allenai.org"
+
+[[project.authors]]
+name = "Yoganand Chandrasekhar"
+email = "yogic@allenai.org"
+
+[[project.authors]]
+name = "Regan Huff"
+email = "reganh@allenai.org"
+
+[[project.authors]]
+name = "Amanpreet Singh"
+email = "amans@allenai.org"
+
+[[project.authors]]
 name = "Chris Wilhelm"
 email = "chrisw@allenai.org"
 
+[[project.authors]]
+name = "Angele Zamarron"
+email = "angelez@allenai.org"
 
 [project.urls]
 'Homepage' = 'https://www.github.com/allenai/papermage'
@@ -69,6 +93,7 @@ where = ['.',]
 [tool.setuptools.package-data]
 papermage = [
     '../requirements.txt',
+    'py.typed',
 ]
 
 [build-system]
@@ -76,7 +101,8 @@ build-backend = 'setuptools.build_meta'
 requires = [
     'setuptools >= 61.0.0',
     'pip >= 21.0.0',
-    'wheel'
+    'wheel',
+    'Cython==0.29.36'
 ]
 
 [project.optional-dependencies]
@@ -86,11 +112,14 @@ dev = [
     'pytest-cov',
     'mypy>=0.971'
 ]
+visualizers = [
+    'layoutparser==0.3.4'
+]
 predictors = [
     'thefuzz[speedup]',
     'scikit-learn==1.3.0',
     'xgboost==1.6.2',
-    'spacy==3.3.1',
+    'spacy>=3.4.2',
     'pysbd==0.3.4',
     'tokenizers==0.13.3',
     'torch==2.0.1',
@@ -98,11 +127,16 @@ predictors = [
     'layoutparser==0.3.4',
     'transformers==4.31.0',
     'smashed==0.1.10',
-    'optimum[onnxruntime]==1.10.0',
     'pytorch-lightning==2.0.5',
     'springs==1.12.3',
     'wandb==0.15.7',
     'seqeval==1.2.2',
+    'effdet==0.3.0',
+    'decontext@git+https://github.com/bnewm0609/qa-decontextualization@python311',
+    'vila==0.5.0'
+]
+production = [
+    'optimum[onnxruntime]==1.10.0'
 ]
 
 [tool.pytest.ini_options]
