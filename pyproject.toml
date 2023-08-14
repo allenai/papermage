@@ -128,7 +128,7 @@ predictors = [
     'transformers==4.31.0',
     'smashed==0.1.10',
     'pytorch-lightning==2.0.5',
-    'springs==1.12.3',
+    'springs==1.13.0',
     'wandb==0.15.7',
     'seqeval==1.2.2',
     'effdet==0.3.0',
