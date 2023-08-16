@@ -43,6 +43,7 @@ from .document import (
 from .entity import Entity
 from .image import Image
 from .indexer import EntityBoxIndexer, EntitySpanIndexer
+from .layer import Layer
 from .metadata import Metadata
 from .span import Span
 
@@ -70,6 +71,7 @@ __all__ = [
     "ImagesFieldName",
     "KeywordsFieldName",
     "KeywordsFieldName",
+    "Layer",
     "ListsFieldName",
     "Metadata",
     "MetadataFieldName",
