@@ -8,15 +8,18 @@ import json
 import pathlib
 import unittest
 
+import transformers
+
 from papermage.magelib import Document, Entity, Span
 from papermage.parsers import PDFPlumberParser
-from papermage.predictors import HFBIOTaggerPredictor
+from papermage.predictors.hf_predictors.bio_tagger_predictor import HFBIOTaggerPredictor, BIOPrediction
 
 TEST_SCIBERT_WEIGHTS = "allenai/scibert_scivocab_uncased"
 
 
-class TestEntityClassificationPredictor(unittest.TestCase):
+class TestBioTaggerPredictor(unittest.TestCase):
     def setUp(self):
+        transformers.set_seed(407)
         self.fixture_path = pathlib.Path(__file__).parent.parent / "fixtures"
         with open(self.fixture_path / "entity_classification_predictor_test_doc_papermage.json", "r") as f:
             test_doc_json = json.load(f)
@@ -25,16 +28,30 @@ class TestEntityClassificationPredictor(unittest.TestCase):
         ent2 = Entity(spans=[Span(start=457, end=641)])
         self.doc.annotate_entity(field_name="bibs", entities=[ent1, ent2])
 
+        # self.predictor = HFBIOTaggerPredictor.from_pretrained(
+        #     model_name_or_path=TEST_SCIBERT_WEIGHTS, entity_name="tokens", context_name="pages"
+        # )
+        self.id2label = {0: "O", 1: "B_Label", 2: "I_Label"}
+        self.label2id = {label: id_ for id_, label in self.id2label.items()}
         self.predictor = HFBIOTaggerPredictor.from_pretrained(
-            model_name_or_path=TEST_SCIBERT_WEIGHTS, entity_name="tokens", context_name="pages"
+            model_name_or_path=TEST_SCIBERT_WEIGHTS,
+            entity_name="tokens",
+            context_name="pages",
+            **{"num_labels": len(self.id2label), "id2label": self.id2label, "label2id": self.label2id},
         )
 
     def test_predict_pages_tokens(self):
         predictor = HFBIOTaggerPredictor.from_pretrained(
-            model_name_or_path=TEST_SCIBERT_WEIGHTS, entity_name="tokens", context_name="pages"
+            model_name_or_path=TEST_SCIBERT_WEIGHTS,
+            entity_name="tokens",
+            context_name="pages",
+            **{"num_labels": len(self.id2label), "id2label": self.id2label, "label2id": self.label2id},
         )
         token_tags = predictor.predict(doc=self.doc)
-        assert len(token_tags) == 1
+        # import pytest
+
+        # pytest.set_trace()
+        assert len(token_tags) == 340
 
         self.doc.annotate_entity(field_name="token_tags", entities=token_tags)
         for token_tag in token_tags:
@@ -44,7 +61,7 @@ class TestEntityClassificationPredictor(unittest.TestCase):
     def test_predict_bibs_tokens(self):
         self.predictor.context_name = "bibs"
         token_tags = self.predictor.predict(doc=self.doc)
-        assert len(token_tags) == 1
+        assert len(token_tags) == 38
 
     def test_missing_fields(self):
         self.predictor.entity_name = "OHNO"
@@ -66,11 +83,27 @@ class TestEntityClassificationPredictor(unittest.TestCase):
             entity_name="tokens",
             context_name="pages",
             add_prefix_space=True,  # Needed for roberta
+            **{"num_labels": len(self.id2label), "id2label": self.id2label, "label2id": self.label2id},
         )
         token_tags = predictor.predict(doc=self.doc)
-        assert len(token_tags) == 1
+        assert len(token_tags) == 924
 
         self.doc.annotate_entity(field_name="token_tags", entities=token_tags)
         for token_tag in token_tags:
             assert isinstance(token_tag.metadata.label, str)
             assert isinstance(token_tag.metadata.score, float)
+
+    # def test_postprocess(self):
+    #     self.predictor.postprocess(
+    #         doc=self.doc,
+    #         context_name="pages",
+    #         preds=[
+    #             BIOPrediction(context_id=0, entity_id=0, label="B-Label", score=0.4),
+    #             BIOPrediction(context_id=0, entity_id=1, label="I-Label", score=0.2),
+    #             BIOPrediction(context_id=0, entity_id=2, label="O", score=0.3),
+    #             BIOPrediction(context_id=0, entity_id=3, label=None, score=None),
+    #             BIOPrediction(context_id=0, entity_id=4, label="B-Label", score=0.4),
+    #             BIOPrediction(context_id=0, entity_id=5, label=None, score=None),
+    #             BIOPrediction(context_id=0, entity_id=6, label="I-Label", score=0.2),
+    #         ],
+    #     )
