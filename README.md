@@ -30,15 +30,20 @@ python -m pytest -k 'TestPDFPlumberParser' --no-cov -n0
 ## Quick start
 
 #### 1. Create a Document for the first time from a PDF
-TODO
+```
+from papermage.recipes import CoreRecipe
+
+recipe = CoreRecipe()
+doc = recipe.run("tests/fixtures/papermage.pdf")
+```
 
 #### 2. Understanding the output: the `Document` class
 
 What is a `Document`? At minimum, it is some text, saved under the `.symbols` field, which is just a `<str>`.  For example:
 
 ```python
-doc.symbols
-> "Language Models as Knowledge Bases?\nFabio Petroni1 Tim Rockt..."
+> doc.symbols
+"PaperMage: A Unified Toolkit for Processing, Representing, and\nManipulating Visually-..."
 ```
 
 But this library is really useful when you have multiple different ways of segmenting `.symbols`. For example, segmenting the paper into Pages, and then each page into Rows:
@@ -47,27 +52,33 @@ But this library is really useful when you have multiple different ways of segme
 for page in doc.pages:
     print(f'\n=== PAGE: {page.id} ===\n\n')
     for row in page.rows:
-        print(row.symbols)
+        print(row.text)
         
-> ...
-> === PAGE: 5 ===
-> ['tence x, s′ will be linked to s and o′ to o. In']
-> ['practice, this means RE can return the correct so-']
-> ['lution o if any relation instance of the right type']
-> ['was extracted from x, regardless of whether it has']
-> ...
+...
+=== PAGE: 5 ===
+
+4
+Vignette: Building an Attributed QA
+System for Scientific Papers
+How could researchers leverage papermage for
+their research? Here, we walk through a user sce-
+nario in which a researcher (Lucy) is prototyping
+an attributed QA system for science.
+System Design.
+Drawing inspiration from Ko
+...
 ```
 
 This shows two nice aspects of this library:
 
-* `Document` provides iterables for different segmentations of `symbols`.  Options include things like `pages, tokens, rows, sents, paragraphs, sections, ...`.  Not every Parser will provide every segmentation, though.
+* `Document` provides iterables for different segmentations of `symbols`.  Options include things like `pages, tokens, rows, sentences, paragraphs, sections, ...`.  Not every Parser will provide every segmentation, though.
 
 * Each one of these segments (in our library, we call them `Entity` objects) is aware of (and can access) other segment types. For example, you can call `page.rows` to get all Rows that intersect a particular Page. Or you can call `sent.tokens` to get all Tokens that intersect a particular Sentence. Or you can call `sent.rows` to get the Row(s) that intersect a particular Sentence. These indexes are built *dynamically* when the `Document` is created and each time a new `Entity` type is added. In the extreme, as long as those fields are available in the Document, you can write:
 
 ```python
 for page in doc.pages:
     for paragraph in page.paragraphs:
-        for sent in paragraph.sents:
+        for sent in paragraph.sentences:
             for row in sent.rows: 
                 ...
 ```
@@ -75,8 +86,35 @@ for page in doc.pages:
 You can check which fields are available in a Document via:
 
 ```python
-doc.fields
-> ['pages', 'tokens', 'rows']
+> doc.fields
+['tokens',
+ 'rows',
+ 'pages',
+ 'words',
+ 'sentences',
+ 'blocks',
+ 'vila_entities',
+ 'titles',
+ 'paragraphs',
+ 'authors',
+ 'abstracts',
+ 'keywords',
+ 'sections',
+ 'lists',
+ 'bibliographies',
+ 'equations',
+ 'algorithms',
+ 'figures',
+ 'tables',
+ 'captions',
+ 'headers',
+ 'footers',
+ 'footnotes',
+ 'symbols',
+ 'images',
+ 'metadata',
+ 'entities',
+ 'relations']
 ```
 
 #### 3. Understanding intersection of Entities
@@ -84,9 +122,9 @@ doc.fields
 Note that `Entity`s don't necessarily perfectly nest each other. For example, what happens if you run:
 
 ```python
-for sent in doc.sents:
+for sent in doc.sentences:
     for row in sent.rows:
-        print([token.symbols for token in row.tokens])
+        print([token.text for token in row.tokens])
 ```
 
 Tokens that are *outside* each sentence can still be printed. This is because when we jump from a sentence to its rows, we are looking for *all* rows that have *any* overlap with the sentence. Rows can extend beyond sentence boundaries, and as such, can contain tokens outside that sentence.
@@ -94,7 +132,7 @@ Tokens that are *outside* each sentence can still be printed. This is because wh
 Here's another example:
 ```python
 for page in doc.pages:
-    print([sent.symbols for sent in page.sents])
+    print([sent.text for sent in page.sentences])
 ```
 
 Sentences can cross page boundaries. As such, adjacent pages may end up printing the same sentence.
@@ -102,8 +140,8 @@ Sentences can cross page boundaries. As such, adjacent pages may end up printing
 But rows and tokens adhere strictly to page boundaries, and thus will not repeat when printed across pages:
 ```python
 for page in doc.pages:
-    print([row.symbols for row in page.rows])
-    print([token.symbols for token in page.tokens])
+    print([row.text for row in page.rows])
+    print([token.text for token in page.tokens])
 ``` 
 
 A key aspect of using this library is understanding how these different fields are defined & anticipating how they might interact with each other. We try to make decisions that are intuitive, but we do ask users to experiment with fields to build up familiarity.
@@ -145,16 +183,15 @@ with open('filename.json', 'w') as f_out:
 will produce something akin to:
 ```python
 {
-    "symbols": "Language Models as Knowledge Bases?\nFabio Petroni1 Tim Rockt...",
+    "symbols": "PaperMage: A Unified Toolkit for Processing, Representing, an...",
     "entities": {
         "images": [...],
         "rows": [...],
         "tokens": [...],
         "words": [...],
         "blocks": [...],
-        "vila_span_groups": [...]
+        "sentences": [...]
     },
-    "relations": {...},
     "metadata": {...}
 }
 ```
@@ -175,4 +212,6 @@ with open('filename.json') as f_in:
 
 Note: A common pattern for adding fields to a document is to load in a previously saved document, run some additional `Predictors` on it, and save the result.
 
-See `papermage/predictors/README.md` for more information about training customer predictors on your own data.
+See `papermage/predictors/README.md` for more information about training custom predictors on your own data.
+
+See `papermage/examples/quick_start_demo.ipynb` for a notebook walking through some more usage patterns.
