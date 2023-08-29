@@ -28,5 +28,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get -y install poppler-utils
+          pip install --upgrade pip
           pip install -e .[dev,predictors,visualizers]
           pytest --cov-fail-under=42 --log-disable=pdfminer.psparser --log-disable=pdfminer.pdfinterp --log-disable=pdfminer.cmapdb --log-disable=pdfminer.pdfdocument --log-disable=pdfminer.pdffont --log-disable=pdfminer.pdfparser --log-disable=pdfminer.converter --log-disable=pdfminer.converter --log-disable=pdfminer.pdfpage
