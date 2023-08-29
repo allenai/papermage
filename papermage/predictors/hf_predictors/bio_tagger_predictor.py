@@ -247,25 +247,39 @@ class HFBIOTaggerPredictor(BasePredictor):
         ]
 
     def combine_annotations(self, annotations: List[Entity]) -> Annotation:
-        # import pytest; pytest.set_trace()
         label = annotations[0].metadata.label[2:]  # remove the B-
         scores = [annotation.metadata.score for annotation in annotations]
         span = Span.create_enclosing_span([span for annotation in annotations for span in annotation.spans])
         smaller_boxes = [box for annotation in annotations for box in annotation.boxes]
-        box = [Box.create_enclosing_box(smaller_boxes)] if smaller_boxes else []
+        # For now, don't merge boxes because they can be on different pages
+        # group boxes by page
+        smaller_boxes_by_page = defaultdict(list)
+        for annotation in annotations:
+            for box in annotation.boxes:
+                smaller_boxes_by_page[box.page].append(box)
+        smaller_boxes = [Box.create_enclosing_box(boxes) for boxes in smaller_boxes_by_page.values() if boxes]
+
         return Entity(
             spans=[span],
-            boxes=box,
-            metadata=Metadata(label=label, score=np.mean(scores)),
+            boxes=smaller_boxes,
+            metadata=Metadata(label=label, score=np.mean([score for score in scores if score is not None])),
         )
 
-    def postprocess(self, doc: Document, context_name: str, preds: List[BIOPrediction]) -> List[Annotation]:
+    def postprocess(
+        self, doc: Document, context_name: str, preds: List[BIOPrediction], merge_tokens: bool = True
+    ) -> List[Annotation]:
         """This function handles a bunch of nonsense that happens with Huggingface models &
         how we processed the data.  Namely:
 
         Because Huggingface might drop tokens during the course of tokenization
         we need to organize our predictions into a Lookup <dict> and cross-reference
         with the original input SpanGroups to make sure they all got classified.
+
+        If merge_tokens is True, predictions are merged into new annotations, so tokens with consecutive
+        labels "B-Xxxx", "I-Xxxx" will be merged into a single annotation with the label "Xxxx". This is
+        useful when using papermage in general.
+        If merge_tokens is False, there will be one annotation per token with the label for that token. This
+        is useful for evaluating models trained with BIO tags.
         """
         # (1) organize predictions into a Lookup at the (Context, SpanGroup) level.
         context_id_to_entity_id_to_pred: Dict[int, Dict[int, BIOPrediction]] = defaultdict(dict)
@@ -292,21 +306,27 @@ class HFBIOTaggerPredictor(BasePredictor):
                     metadata=new_metadata,
                 )
 
-                if new_entity.metadata.label.startswith("B"):
-                    # end the last annotation
-                    if field_annotations:
-                        annotations.append(self.combine_annotations(field_annotations))
-                    field_annotations = [new_entity]
-                elif new_entity.metadata.label == "O":
-                    # end the last annotation
-                    if field_annotations:
-                        annotations.append(self.combine_annotations(field_annotations))
-                    field_annotations = []
+                if merge_tokens:
+                    if new_entity.metadata.label is None or new_entity.metadata.label.startswith("I"):
+                        # Either "I", so we're in the same field or "None", so we're in the same word-piece
+                        field_annotations.append(new_entity)
+                    elif new_entity.metadata.label.startswith("B"):
+                        # end the last annotation
+                        if field_annotations:
+                            annotations.append(self.combine_annotations(field_annotations))
+                        field_annotations = [new_entity]
+                    elif new_entity.metadata.label == "O":
+                        # end the last annotation
+                        if field_annotations:
+                            annotations.append(self.combine_annotations(field_annotations))
+                        field_annotations = []
+                    else:
+                        raise ValueError(
+                            f"Invalid label: {new_entity.metadata.label}. BIO labels should start with B, I, or O."
+                        )
                 else:
-                    # Either "I", so we're in the same field or "None", so we're in the same word-piece
-                    field_annotations.append(new_entity)
-                # annotations.append(new_entity)
-        if field_annotations:
+                    annotations.append(new_entity)
+        if merge_tokens and field_annotations:
             annotations.append(self.combine_annotations(field_annotations))
 
         return annotations
