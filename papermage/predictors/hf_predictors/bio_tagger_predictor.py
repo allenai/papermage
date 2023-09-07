@@ -46,6 +46,9 @@ class BIOBatch:
         self.entity_ids = entity_ids
         self.context_id = context_id
 
+    def __repr__(self) -> str:
+        return f"BIOBatch({self.__dict__})"
+
 
 class BIOPrediction:
     def __init__(self, context_id: int, entity_id: int, label: str, score: float):
@@ -53,6 +56,9 @@ class BIOPrediction:
         self.entity_id = entity_id
         self.label = label
         self.score = score
+
+    def __repr__(self) -> str:
+        return f"BIOPrediction({self.__dict__})"
 
 
 class HFBIOTaggerPredictor(BasePredictor):
@@ -346,9 +352,7 @@ class HFBIOTaggerPredictor(BasePredictor):
         return annotations
 
     def _predict_batch(
-        self,
-        batch: BIOBatch,
-        device: Union[None, str, torch.device] = None
+        self, batch: BIOBatch, device: Union[None, str, torch.device] = None
     ) -> List[BIOPrediction]:
         #
         #   preprocessing!!  (padding & tensorification)

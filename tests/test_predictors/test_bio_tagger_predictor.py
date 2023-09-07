@@ -11,8 +11,11 @@ import unittest
 import transformers
 
 from papermage.magelib import Document, Entity, Span
-from papermage.parsers import PDFPlumberParser
-from papermage.predictors.hf_predictors.bio_tagger_predictor import HFBIOTaggerPredictor, BIOPrediction
+from papermage.predictors.hf_predictors.bio_tagger_predictor import (
+    BIOBatch,
+    BIOPrediction,
+    HFBIOTaggerPredictor,
+)
 
 TEST_SCIBERT_WEIGHTS = "allenai/scibert_scivocab_uncased"
 
@@ -21,6 +24,8 @@ class TestBioTaggerPredictor(unittest.TestCase):
     def setUp(self):
         transformers.set_seed(407)
         self.fixture_path = pathlib.Path(__file__).parent.parent / "fixtures"
+
+        # setup document
         with open(self.fixture_path / "entity_classification_predictor_test_doc_papermage.json", "r") as f:
             test_doc_json = json.load(f)
         self.doc = Document.from_json(doc_json=test_doc_json)
@@ -28,9 +33,7 @@ class TestBioTaggerPredictor(unittest.TestCase):
         ent2 = Entity(spans=[Span(start=457, end=641)])
         self.doc.annotate_entity(field_name="bibs", entities=[ent1, ent2])
 
-        # self.predictor = HFBIOTaggerPredictor.from_pretrained(
-        #     model_name_or_path=TEST_SCIBERT_WEIGHTS, entity_name="tokens", context_name="pages"
-        # )
+        # setup predictor
         self.id2label = {0: "O", 1: "B_Label", 2: "I_Label"}
         self.label2id = {label: id_ for id_, label in self.id2label.items()}
         self.predictor = HFBIOTaggerPredictor.from_pretrained(
@@ -40,6 +43,25 @@ class TestBioTaggerPredictor(unittest.TestCase):
             **{"num_labels": len(self.id2label), "id2label": self.id2label, "label2id": self.label2id},
         )
 
+    def test_preprocess(self):
+        doc = Document(symbols="This is a test document.")
+        tokens = [
+            Entity(spans=[Span(start=0, end=4)]),
+            Entity(spans=[Span(start=5, end=7)]),
+            Entity(spans=[Span(start=8, end=9)]),
+            Entity(spans=[Span(start=10, end=14)]),
+            Entity(spans=[Span(start=15, end=23)]),
+            Entity(spans=[Span(start=23, end=24)]),
+        ]
+        doc.annotate_entity(field_name="tokens", entities=tokens)
+        sents = [Entity(spans=[Span(start=0, end=24)])]
+        doc.annotate_entity(field_name="sents", entities=sents)
+
+        batches = self.predictor.preprocess(doc=doc, context_name="sents")
+        self.assertIsInstance(batches[0], BIOBatch)
+        decoded_batch = self.predictor.tokenizer.batch_decode(batches[0].input_ids)
+        self.assertListEqual(decoded_batch, ["[CLS] this is a test document. [SEP]"])
+
     def test_predict_pages_tokens(self):
         predictor = HFBIOTaggerPredictor.from_pretrained(
             model_name_or_path=TEST_SCIBERT_WEIGHTS,
@@ -48,9 +70,6 @@ class TestBioTaggerPredictor(unittest.TestCase):
             **{"num_labels": len(self.id2label), "id2label": self.id2label, "label2id": self.label2id},
         )
         token_tags = predictor.predict(doc=self.doc)
-        # import pytest
-
-        # pytest.set_trace()
         assert len(token_tags) == 340
 
         self.doc.annotate_entity(field_name="token_tags", entities=token_tags)

@@ -31,7 +31,7 @@ class Entity(Annotation):
 
     def __repr__(self):
         if self.doc:
-            return f"Annotated Entity:\tSpans: {True if self.spans else False}\tBoxes: {True if self.boxes else False}\nText: {self.text}"
+            return f"Annotated Entity:\tID: {self.id}\tSpans: {True if self.spans else False}\tBoxes: {True if self.boxes else False}\tText: {self.text}"
         return f"Unannotated Entity: {self.to_json()}"
 
     def to_json(self) -> Dict:
