@@ -1,1 +1,1 @@
--e .[dev,predictors]
+-e .[dev,predictors,visualizers]
