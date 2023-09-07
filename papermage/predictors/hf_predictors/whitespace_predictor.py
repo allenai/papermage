@@ -17,7 +17,7 @@ from papermage.predictors.base_predictor import BasePredictor
 
 class WhitespacePredictor(BasePredictor):
     REQUIRED_BACKENDS = None
-    REQUIRED_DOCUMENT_FIELDS = [TokensFieldName]
+    REQUIRED_DOCUMENT_FIELDS = []
 
     _dictionary: Optional[Set[str]] = None
 

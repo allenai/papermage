@@ -5,12 +5,9 @@
 """
 
 import logging
+import warnings
 from pathlib import Path
 from typing import Dict, List, Union
-import warnings
-from papermage.predictors.sklearn_predictors.word_predictor import make_text
-
-from papermage.utils.annotate import group_by
 
 from papermage.magelib import (
     AbstractsFieldName,
@@ -18,11 +15,11 @@ from papermage.magelib import (
     AuthorsFieldName,
     BibliographiesFieldName,
     BlocksFieldName,
+    Box,
     CaptionsFieldName,
     Document,
     EntitiesFieldName,
     Entity,
-    Box,
     EquationsFieldName,
     FiguresFieldName,
     FootersFieldName,
@@ -51,9 +48,10 @@ from papermage.predictors import (
     PysbdSentencePredictor,
     SVMWordPredictor,
 )
+from papermage.predictors.sklearn_predictors.word_predictor import make_text
 from papermage.rasterizers.rasterizer import PDF2ImageRasterizer
 from papermage.recipes.recipe import Recipe
-
+from papermage.utils.annotate import group_by
 
 VILA_LABELS_MAP = {
     "Title": TitlesFieldName,
@@ -107,31 +105,18 @@ class CoreRecipe(Recipe):
         self.sent_predictor = PysbdSentencePredictor()
         self.logger.info("Finished instantiating recipe")
 
-    def run(self, pdf: Union[str, Path, Document]) -> Document:
-        if isinstance(pdf, str):
-            pdf = Path(pdf)
-            assert pdf.exists(), f"File {pdf} does not exist."
-        assert isinstance(
-            pdf, (Document, Path)
-        ), f"Unsupported type {type(pdf)} for pdf; should be a Document or a path to a PDF file."
-        if isinstance(pdf, Path):
-            return self.from_path(str(pdf))
-        else:
-            raise NotImplementedError("Document input not yet supported.")
-
-    def from_path(self, pdfpath: str) -> Document:
+    def from_pdf(self, pdf: Path) -> Document:
         self.logger.info("Parsing document...")
-        doc = self.parser.parse(input_pdf_path=pdfpath)
+        doc = self.parser.parse(input_pdf_path=pdf)
 
         self.logger.info("Rasterizing document...")
-        images = self.rasterizer.rasterize(input_pdf_path=pdfpath, dpi=self.dpi)
+        images = self.rasterizer.rasterize(input_pdf_path=pdf, dpi=self.dpi)
         doc.annotate_images(images=list(images))
         self.rasterizer.attach_images(images=images, doc=doc)
         return self.from_doc(doc=doc)
 
     def from_doc(self, doc: Document) -> Document:
         self.logger.info("Predicting words...")
-
         words = self.word_predictor.predict(doc=doc)
         doc.annotate_entity(field_name=WordsFieldName, entities=words)
 
@@ -171,6 +156,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     recipe = CoreRecipe()
-    doc = recipe.from_path(pdfpath=args.pdf)
+    doc = recipe.from_pdf(pdf=args.pdf)
     with open(args.output, "w") as f:
         json.dump(doc.to_json(), f, indent=2)
