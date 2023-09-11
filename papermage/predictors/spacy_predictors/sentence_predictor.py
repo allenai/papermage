@@ -13,60 +13,16 @@ import numpy as np
 import pysbd
 
 from papermage.magelib import (
+    Annotation,
     Document,
     Entity,
     PagesFieldName,
     Span,
     TokensFieldName,
     WordsFieldName,
-    Annotation
 )
 from papermage.predictors.base_predictor import BasePredictor
-
-
-def merge_neighbor_spans(spans: List[Span], distance=1) -> List[Span]:
-    """Merge neighboring spans in a list of un-overlapped spans:
-    when the gaps between neighboring spans is not larger than the
-    specified distance, they are considered as the neighbors.
-
-    Args:
-        spans (List[Span]): The input list of spans.
-        distance (int, optional):
-            The upper bound of interval gaps between two neighboring spans.
-            Defaults to 1.
-
-    Returns:
-        List[Span]: A list of merged spans
-    """
-
-    is_neighboring_spans = (
-        lambda span1, span2: min(abs(span1.start - span2.end), abs(span1.end - span2.start)) <= distance
-    )
-
-    # It assumes non-overlapped intervals within the list
-    def merge_neighboring_spans(span1, span2):
-        return Span(min(span1.start, span2.start), max(span1.end, span2.end))
-
-    spans = sorted(spans, key=lambda ele: ele.start)
-    # When sorted, only one iteration round is needed.
-
-    if len(spans) == 0:
-        return []
-    if len(spans) == 1:
-        return spans
-
-    cur_merged_spans = [spans[0]]
-
-    for cur_span in spans[1:]:
-        prev_span = cur_merged_spans.pop()
-        if is_neighboring_spans(cur_span, prev_span):
-            cur_merged_spans.append(merge_neighboring_spans(prev_span, cur_span))
-        else:
-            # In this case, the prev_span should be moved to the
-            # bottom of the stack
-            cur_merged_spans.extend([prev_span, cur_span])
-
-    return cur_merged_spans
+from papermage.utils.merge import cluster_and_merge_neighbor_spans
 
 
 class PysbdSentencePredictor(BasePredictor):
@@ -142,7 +98,7 @@ class PysbdSentencePredictor(BasePredictor):
             cur_spans = getattr(doc, attr_name)[start:end]
 
             all_token_spans = list(itertools.chain.from_iterable([ele.spans for ele in cur_spans]))
-
-            sentence_spans.append(Entity(spans=merge_neighbor_spans(all_token_spans)))
+            results = cluster_and_merge_neighbor_spans(all_token_spans)
+            sentence_spans.append(Entity(spans=results.merged))
 
         return sentence_spans
