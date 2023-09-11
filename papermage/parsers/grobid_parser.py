@@ -25,8 +25,8 @@ from papermage.magelib import (
     TokensFieldName,
 )
 from papermage.magelib.box import Box
-from papermage.magelib.span import MergeClusterSpans
 from papermage.parsers.parser import Parser
+from papermage.utils.merge import cluster_and_merge_neighbor_spans
 
 REQUIRED_DOCUMENT_FIELDS = [PagesFieldName, RowsFieldName, TokensFieldName]
 NS = {"tei": "http://www.tei-c.org/ns/1.0"}
@@ -115,10 +115,7 @@ class GrobidFullParser(Parser):
         os.remove(config_path)
 
     def parse(  # type: ignore
-        self,
-        input_pdf_path: str,
-        doc: Document,
-        xml_out_dir: Optional[str] = None
+        self, input_pdf_path: str, doc: Document, xml_out_dir: Optional[str] = None
     ) -> Document:
         assert doc.symbols != ""
         for field in REQUIRED_DOCUMENT_FIELDS:
@@ -157,8 +154,11 @@ class GrobidFullParser(Parser):
 
     def _make_spans_from_boxes(self, doc: Document, entity: Entity) -> List[Span]:
         tokens = [cast(Entity, t) for match in doc.find_by_box(entity, "tokens") for t in match.tokens]
-        spans = MergeClusterSpans(sorted(set(s for t in tokens for s in t.spans), key=lambda x: x.start)).merge()
-        return spans
+        results = cluster_and_merge_neighbor_spans(
+            spans=sorted(set(s for t in tokens for s in t.spans), key=lambda x: x.start)
+        )
+        merged_spans = results.merged
+        return merged_spans
 
     def _make_spans_from_boxes_if_not_found(self, doc: Document, entity: Entity) -> List[Span]:
         spans = [Span(start=s.start, end=s.end) for s in entity.spans]

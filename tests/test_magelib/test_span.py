@@ -9,7 +9,6 @@
 import unittest
 
 from papermage.magelib import Span
-from papermage.magelib.span import MergeClusterSpans
 
 
 class TestSpan(unittest.TestCase):
@@ -58,47 +57,3 @@ class TestSpan(unittest.TestCase):
         span = Span.create_enclosing_span(spans=[Span(1, 2), Span(2, 3), Span(9, 10)])
         self.assertEqual(span.start, 1)
         self.assertEqual(span.end, 10)
-
-
-class TestMergeClusterSpans(unittest.TestCase):
-    def setUp(self):
-        self.a = Span(0, 1)
-        self.b = Span(1, 2)
-        self.c = Span(3, 4)
-        self.d = Span(4, 5)
-        self.e = Span(9, 10)
-
-    def test_empty(self):
-        mcs = MergeClusterSpans(spans=[])
-        self.assertListEqual(mcs.clusters, [[]])
-        self.assertListEqual(mcs.merge(), [])
-
-    def test_single(self):
-        mcs = MergeClusterSpans(spans=[self.a])
-        self.assertListEqual(mcs.clusters, [[self.a]])
-        self.assertListEqual(mcs.merge(), [self.a])
-
-    def test_disjoint(self):
-        mcs = MergeClusterSpans(spans=[self.a, self.c, self.e])
-        self.assertListEqual(mcs.clusters, [[self.a], [self.c], [self.e]])
-        self.assertListEqual(mcs.merge(), [self.a, self.c, self.e])
-        # reversed order
-        mcs = MergeClusterSpans(spans=[self.e, self.c, self.a])
-        self.assertListEqual(mcs.clusters, [[self.e], [self.c], [self.a]])
-        self.assertListEqual(mcs.merge(), [self.e, self.c, self.a])
-
-    def test_cluster(self):
-        mcs = MergeClusterSpans(spans=[self.a, self.b, self.c, self.d, self.e], index_distance=0)
-        self.assertListEqual(mcs.clusters, [[self.a, self.b], [self.c, self.d], [self.e]])
-        mcs = MergeClusterSpans(spans=[self.a, self.b, self.c, self.d, self.e], index_distance=1)
-        self.assertListEqual(mcs.clusters, [[self.a, self.b, self.c, self.d], [self.e]])
-        mcs = MergeClusterSpans(spans=[self.a, self.b, self.c, self.d, self.e], index_distance=4)
-        self.assertListEqual(mcs.clusters, [[self.a, self.b, self.c, self.d, self.e]])
-
-    def test_merge(self):
-        mcs = MergeClusterSpans(spans=[self.a, self.b, self.c, self.d, self.e], index_distance=0)
-        self.assertListEqual(mcs.merge(), [Span(0, 2), Span(3, 5), Span(9, 10)])
-        mcs = MergeClusterSpans(spans=[self.a, self.b, self.c, self.d, self.e], index_distance=1)
-        self.assertListEqual(mcs.merge(), [Span(0, 5), Span(9, 10)])
-        mcs = MergeClusterSpans(spans=[self.a, self.b, self.c, self.d, self.e], index_distance=4)
-        self.assertListEqual(mcs.merge(), [Span(0, 10)])
