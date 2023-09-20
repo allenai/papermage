@@ -11,7 +11,7 @@ from sklearn.metrics import classification_report
 from papermage.magelib import Box, Document, Entity, Image, Metadata, Span
 from papermage.parsers.grobid_parser import GrobidClient, GrobidFullParser
 from papermage.predictors import HFBIOTaggerPredictor, IVILATokenClassificationPredictor
-from papermage.predictors.base_predictor import BasePredictor
+from papermage.predictors.base_predictors.base_predictor import BasePredictor
 
 with necessary("datasets"):
     import datasets
@@ -82,12 +82,11 @@ patch_grobid_parser_xml_coords_to_boxes()
 patch_grobid_client_process_pdf()
 
 if __name__ == "__main__":
-
     ap = ArgumentParser()
     ap.add_argument("mode", choices=["new", "old", "grobid-fast", "grobid-full"])
     args = ap.parse_args()
 
-    dt = datasets.load_dataset('allenai/s2-vl', split='test')
+    dt = datasets.load_dataset("allenai/s2-vl", split="test")
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     if args.mode == "new":
@@ -104,11 +103,10 @@ if __name__ == "__main__":
         )
         run_fn = partial(run_vila, vila_predictor=vila_predictor)
     elif args.mode.startswith("grobid"):
-
         if args.mode == "grobid-full":
-            grobid_parser = GrobidFullParser(grobid_server='http://s2-elanding-24.reviz.ai2.in:32771')
+            grobid_parser = GrobidFullParser(grobid_server="http://s2-elanding-24.reviz.ai2.in:32771")
         else:
-            grobid_parser = GrobidFullParser(grobid_server='http://s2-elanding-24.reviz.ai2.in:32772')
+            grobid_parser = GrobidFullParser(grobid_server="http://s2-elanding-24.reviz.ai2.in:32772")
         run_fn = partial(run_grobid, grobid_parser=grobid_parser)
     else:
         raise ValueError(f"Invalid value for `mode`: {args.mode}")
@@ -124,9 +122,11 @@ if __name__ == "__main__":
         docs.append(doc)
         doc = run_fn(doc=doc)
 
-        gold_tokens.extend(e[0].metadata.type if len(e := token._vila_entities)
-                           else "null" for token in doc.tokens)
-        pred_tokens.extend(e[0].metadata.label if len(e := token.vila_entities)
-                           else "null" for token in doc.tokens)
+        gold_tokens.extend(
+            e[0].metadata.type if len(e := token._vila_entities) else "null" for token in doc.tokens
+        )
+        pred_tokens.extend(
+            e[0].metadata.label if len(e := token.vila_entities) else "null" for token in doc.tokens
+        )
 
     print(classification_report(y_true=gold_tokens, y_pred=pred_tokens, digits=4))

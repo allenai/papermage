@@ -18,12 +18,10 @@ from decontext.data_types import (
 from decontext.step.qa import TemplateRetrievalQAStep
 
 from papermage.magelib import Annotation, Document, Entity
-from papermage.predictors.base_predictor import BasePredictor
+from papermage.predictors.base_predictors.base_predictor import BasePredictor
 
 
 class APISpanQAPredictor(BasePredictor):
-    REQUIRED_BACKENDS = ["transformers", "torch", "decontext"]
-
     def __init__(self, context_unit_name: str = "paragraph", span_name: str = "user_selected_span"):
         self.context_unit_name = context_unit_name
         self.span_name = span_name
