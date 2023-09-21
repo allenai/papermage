@@ -24,6 +24,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
           architecture: x64
 
+      - name: Print sys.path
+        run: |
+          python -c "import sys; print(sys.path)"
+
       - name: Test with Python ${{ matrix.python-version }}
         run: |
           sudo apt-get update
