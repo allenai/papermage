@@ -11,7 +11,7 @@ import unittest
 import transformers
 
 from papermage.magelib import Document, Entity, Span
-from papermage.predictors.hf_predictors.bio_tagger_predictor import (
+from papermage.predictors.base_predictors.hf_predictors import (
     BIOBatch,
     BIOPrediction,
     HFBIOTaggerPredictor,

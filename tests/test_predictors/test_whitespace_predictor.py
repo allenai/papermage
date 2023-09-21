@@ -8,7 +8,7 @@
 import unittest
 
 from papermage.magelib import Document, Entity, Span
-from papermage.predictors import WhitespacePredictor
+from papermage.predictors import HFWhitspaceTokenPredictor
 
 
 class TestWhitespacePredictor(unittest.TestCase):
@@ -43,7 +43,7 @@ class TestWhitespacePredictor(unittest.TestCase):
         doc = Document(symbols=symbols)
         doc.annotate_entity(field_name="tokens", entities=[Entity(spans=[span]) for i, span in enumerate(spans)])
 
-        predictor = WhitespacePredictor()
+        predictor = HFWhitspaceTokenPredictor()
         ws_chunks = predictor.predict(doc)
 
         doc.annotate_entity(field_name="ws_chunks", entities=ws_chunks)

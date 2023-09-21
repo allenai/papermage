@@ -21,7 +21,7 @@ from papermage.magelib import (
     TokensFieldName,
     WordsFieldName,
 )
-from papermage.predictors.base_predictor import BasePredictor
+from papermage.predictors import BasePredictor
 from papermage.utils.merge import cluster_and_merge_neighbor_spans
 
 
@@ -35,8 +35,9 @@ class PysbdSentencePredictor(BasePredictor):
         >>> doc.annotate(sentences=sentence_spans)
     """
 
-    REQUIRED_BACKENDS = ["pysbd"]
-    REQUIRED_DOCUMENT_FIELDS = [TokensFieldName]  # type: ignore
+    @property
+    def REQUIRED_DOCUMENT_FIELDS(self) -> List[str]:
+        return [TokensFieldName]  # type: ignore
 
     def __init__(self) -> None:
         self._segmenter = pysbd.Segmenter(language="en", clean=False, char_span=True)

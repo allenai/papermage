@@ -11,14 +11,14 @@ from pathlib import Path
 from typing import Dict, List, Union
 
 from papermage.magelib import Box, Document, Entity, SentencesFieldName, TokensFieldName
-from papermage.predictors import PysbdSentencePredictor, WhitespacePredictor
+from papermage.predictors import HFWhitspaceTokenPredictor, PysbdSentencePredictor
 from papermage.recipes.recipe import Recipe
 
 
 class TextRecipe(Recipe):
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.tokenizer_predictor = WhitespacePredictor()
+        self.tokenizer_predictor = HFWhitspaceTokenPredictor()
         self.sent_predictor = PysbdSentencePredictor()
 
     def from_str(self, text: str) -> Document:

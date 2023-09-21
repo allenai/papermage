@@ -24,11 +24,18 @@ import requests
 from joblib import load
 from scipy.sparse import hstack
 
-from papermage.magelib import Document, Entity, Metadata, Span, WordsFieldName, Annotation
+from papermage.magelib import (
+    Annotation,
+    Document,
+    Entity,
+    Metadata,
+    Span,
+    TokensFieldName,
+    WordsFieldName,
+)
 from papermage.parsers.pdfplumber_parser import PDFPlumberParser
-from papermage.predictors.base_predictor import BasePredictor
-from papermage.predictors.hf_predictors.whitespace_predictor import WhitespacePredictor
-
+from papermage.predictors import BasePredictor
+from papermage.predictors.token_predictors import HFWhitspaceTokenPredictor
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +52,7 @@ def make_text(entity: Union[Entity, Annotation], document: Document, field: str 
             assert isinstance(next_word_start, int), f"{candidate_words[i + 1]} has no span (non-int start)"
             assert isinstance(curr_word_end, int), f"{candidate_words[i]} has no span (non-int end)"
             if curr_word_end != next_word_start:
-                candidate_text.append(document.symbols[curr_word_end : next_word_start])
+                candidate_text.append(document.symbols[curr_word_end:next_word_start])
 
     return "".join(candidate_text)
 
@@ -208,9 +215,13 @@ class SVMWordPredictor(BasePredictor):
         punct_as_words: str = PDFPlumberParser.DEFAULT_PUNCTUATION_CHARS.replace("-", ""),
     ):
         self.classifier = classifier
-        self.whitespace_predictor = WhitespacePredictor()
+        self.whitespace_predictor = HFWhitspaceTokenPredictor()
         self.threshold = threshold
         self.punct_as_words = punct_as_words
+
+    @property
+    def REQUIRED_DOCUMENT_FIELDS(self) -> List[str]:
+        return [TokensFieldName]
 
     @classmethod
     def from_path(cls, tar_path: str):
@@ -224,7 +235,7 @@ class SVMWordPredictor(BasePredictor):
         predictor = SVMWordPredictor(classifier=classifier, threshold=threshold)
         return predictor
 
-    def predict(self, doc: Document) -> List[Entity]:
+    def _predict(self, doc: Document) -> List[Entity]:
         # clean input
         doc = self._make_clean_document(doc=doc)
 

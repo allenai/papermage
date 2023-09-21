@@ -7,24 +7,29 @@ part of the same segment/chunk (e.g. "few-shot" if tokenized as ["few", "-", "sh
 
 """
 
+import os
 from typing import List, Optional, Set, Tuple
 
 import tokenizers
 
-from papermage.magelib import Document, Entity, Metadata, Span, TokensFieldName
-from papermage.predictors.base_predictor import BasePredictor
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
-class WhitespacePredictor(BasePredictor):
-    REQUIRED_BACKENDS = None
-    REQUIRED_DOCUMENT_FIELDS = []
+from papermage.magelib import Document, Entity, Metadata, Span
+from papermage.predictors import BasePredictor
+
+
+class HFWhitspaceTokenPredictor(BasePredictor):
+    @property
+    def REQUIRED_DOCUMENT_FIELDS(self) -> List[str]:
+        return []
 
     _dictionary: Optional[Set[str]] = None
 
     def __init__(self) -> None:
         self.whitespace_tokenizer = tokenizers.pre_tokenizers.WhitespaceSplit()
 
-    def predict(self, doc: Document) -> List[Entity]:
+    def _predict(self, doc: Document) -> List[Entity]:
         self._doc_field_checker(doc)
 
         # 1) whitespace tokenization on symbols. each token is a nested tuple ('text', (start, end))

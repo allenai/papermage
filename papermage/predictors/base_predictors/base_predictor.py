@@ -15,12 +15,7 @@ from papermage.magelib import Annotation, Document
 class BasePredictor:
     @property
     @abstractmethod
-    def REQUIRED_BACKENDS(self):
-        raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def REQUIRED_DOCUMENT_FIELDS(self):
+    def REQUIRED_DOCUMENT_FIELDS(self) -> List[str]:
         """Due to the dynamic nature of the document class as well the
         models, we require the model creator to provide a list of required
         fields in the document class. If not None, the predictor class

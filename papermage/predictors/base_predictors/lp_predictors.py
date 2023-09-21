@@ -1,3 +1,11 @@
+"""
+
+Base predictors of bounding box detection models from layoutparser
+
+@shannons, @kylel
+
+"""
+
 from typing import Any, Dict, List, Optional, Union
 
 import layoutparser as lp
@@ -13,12 +21,14 @@ from papermage.magelib import (
     Metadata,
     PagesFieldName,
 )
-from papermage.predictors.base_predictor import BasePredictor
+
+from .base_predictor import BasePredictor
 
 
-class LPBlockPredictor(BasePredictor):
-    REQUIRED_BACKENDS = ["layoutparser"]
-    REQUIRED_DOCUMENT_FIELDS = [PagesFieldName, ImagesFieldName]
+class LPPredictor(BasePredictor):
+    @property
+    def REQUIRED_DOCUMENT_FIELDS(self) -> List[str]:
+        return [PagesFieldName, ImagesFieldName]
 
     def __init__(self, model):
         self.model = model
@@ -26,7 +36,7 @@ class LPBlockPredictor(BasePredictor):
     @classmethod
     def from_pretrained(
         cls,
-        config_path: str = "lp://efficientdet/PubLayNet",
+        config_path: str,
         model_path: Optional[str] = None,
         label_map: Optional[Dict] = None,
         extra_config: Optional[Dict] = None,

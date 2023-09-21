@@ -7,7 +7,9 @@ to reduce the dependency on the VILA package.
 @shannons, @kylel
 
 """
+import os
 
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 import inspect
 import itertools
@@ -29,7 +31,7 @@ from papermage.magelib import (
     Span,
     TokensFieldName,
 )
-from papermage.predictors.base_predictor import BasePredictor
+from papermage.predictors import BasePredictor
 
 # Two constants for the constraining the size of the page for
 # inputs to the model.
@@ -54,7 +56,7 @@ VILA_LABELS = [
     "Caption",
     "Header",
     "Footer",
-    "Footnote"
+    "Footnote",
 ]
 
 
@@ -188,8 +190,10 @@ def convert_sequence_tagging_to_spans(
 
 
 class BaseSinglePageTokenClassificationPredictor(BasePredictor):
-    REQUIRED_BACKENDS = ["transformers", "torch", "vila"]
-    REQUIRED_DOCUMENT_FIELDS = [PagesFieldName, TokensFieldName]
+    @property
+    def REQUIRED_DOCUMENT_FIELDS(self) -> List[str]:
+        return [PagesFieldName, TokensFieldName]
+
     DEFAULT_SUBPAGE_PER_RUN = 2  # TODO: Might remove this in the future for longformer-like models
 
     @property
@@ -221,7 +225,7 @@ class BaseSinglePageTokenClassificationPredictor(BasePredictor):
 
         return cls(predictor, subpage_per_run)
 
-    def predict(self, doc: Document, subpage_per_run: Optional[int] = None) -> List[Annotation]:
+    def _predict(self, doc: Document, subpage_per_run: Optional[int] = None) -> List[Annotation]:
         page_prediction_results = []
         for page_id, page in enumerate(doc.pages):
             if page.tokens:

@@ -1,3 +1,11 @@
+"""
+
+QA given an Entity of interest (with span)
+
+@benjaminn
+
+"""
+
 import json
 from typing import List
 
@@ -10,12 +18,10 @@ from decontext.data_types import (
 from decontext.step.qa import TemplateRetrievalQAStep
 
 from papermage.magelib import Annotation, Document, Entity
-from papermage.predictors.base_predictor import BasePredictor
+from papermage.predictors import BasePredictor
 
 
 class APISpanQAPredictor(BasePredictor):
-    REQUIRED_BACKENDS = ["transformers", "torch", "decontext"]
-
     def __init__(self, context_unit_name: str = "paragraph", span_name: str = "user_selected_span"):
         self.context_unit_name = context_unit_name
         self.span_name = span_name
@@ -81,7 +87,7 @@ class APISpanQAPredictor(BasePredictor):
         new_user_selected_span.metadata["question"] = paper_snippet.qae[0].question
         new_user_selected_span.metadata["answer"] = paper_snippet.qae[0].answer
         annotations.append(new_user_selected_span)
-        
+
         # add the context with span
         context_with_span = getattr(getattr(doc, self.span_name)[0], self.context_unit_name)[0]
         # context_with_span = doc.get_entity(self.context_unit_name)[paper_snippet.paragraph_with_snippet.index]

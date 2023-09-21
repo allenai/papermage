@@ -13,7 +13,7 @@ import numpy as np
 
 from papermage.magelib import Document, Entity, Span
 from papermage.predictors import SVMWordPredictor
-from papermage.predictors.sklearn_predictors.word_predictor import SVMClassifier
+from papermage.predictors.word_predictors import SVMClassifier
 
 
 class TestSVMClassifier(unittest.TestCase):

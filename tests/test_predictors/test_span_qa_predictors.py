@@ -10,7 +10,7 @@ import pathlib
 import unittest
 
 from papermage.magelib import Document, Entity, Metadata, Span
-from papermage.predictors.api_predictors.span_qa_predictor import APISpanQAPredictor
+from papermage.predictors import APISpanQAPredictor
 
 
 class TestSpanQAPredictor(unittest.TestCase):

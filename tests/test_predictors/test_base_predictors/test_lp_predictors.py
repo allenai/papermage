@@ -4,16 +4,16 @@ import unittest
 
 from papermage.magelib import Entity
 from papermage.parsers import PDFPlumberParser
-from papermage.predictors.lp_predictors.block_predictor import LPBlockPredictor
+from papermage.predictors.base_predictors.lp_predictors import LPPredictor
 from papermage.rasterizers import PDF2ImageRasterizer
 
 
-class TestLayoutParserPredictor(unittest.TestCase):
+class TestLayoutParserBoxPredictor(unittest.TestCase):
     def setUp(self):
-        self.fixture_path = pathlib.Path(__file__).parent.parent / "fixtures"
+        self.fixture_path = pathlib.Path(__file__).parent.parent.parent / "fixtures"
         self.parser = PDFPlumberParser()
         self.rasterizer = PDF2ImageRasterizer()
-        self.layout_predictor = LPBlockPredictor.from_pretrained("lp://efficientdet/PubLayNet")
+        self.layout_predictor = LPPredictor.from_pretrained("lp://efficientdet/PubLayNet")
 
     def test_predict(self):
         input_pdf_path = self.fixture_path / "4be952924cd565488b4a239dc6549095029ee578.pdf"

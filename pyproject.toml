@@ -1,6 +1,6 @@
 [project]
 name = 'papermage'
-version = '0.13.0'
+version = '0.14.0'
 description = 'Papermage. Casting magic over scientific PDFs.'
 license = {text = 'Apache-2.0'}
 readme = 'README.md'

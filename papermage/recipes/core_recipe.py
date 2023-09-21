@@ -44,11 +44,12 @@ from papermage.parsers.pdfplumber_parser import PDFPlumberParser
 from papermage.predictors import (
     HFBIOTaggerPredictor,
     IVILATokenClassificationPredictor,
-    LPBlockPredictor,
+    LPEffDetFormulaPredictor,
+    LPEffDetPubLayNetBlockPredictor,
     PysbdSentencePredictor,
     SVMWordPredictor,
 )
-from papermage.predictors.sklearn_predictors.word_predictor import make_text
+from papermage.predictors.word_predictors import make_text
 from papermage.rasterizers.rasterizer import PDF2ImageRasterizer
 from papermage.recipes.recipe import Recipe
 from papermage.utils.annotate import group_by
@@ -76,8 +77,6 @@ VILA_LABELS_MAP = {
 class CoreRecipe(Recipe):
     def __init__(
         self,
-        effdet_publaynet_predictor_path: str = "lp://efficientdet/PubLayNet",
-        effdet_mfd_predictor_path: str = "lp://efficientdet/MFD",
         ivila_predictor_path: str = "allenai/ivila-row-layoutlm-finetuned-s2vl-v2",
         bio_roberta_predictor_path: str = "allenai/vila-roberta-large-s2vl-internal",
         svm_word_predictor_path: str = "https://ai2-s2-research-public.s3.us-west-2.amazonaws.com/mmda/models/svm_word_predictor.tar.gz",
@@ -94,8 +93,7 @@ class CoreRecipe(Recipe):
             warnings.simplefilter("ignore")
             self.word_predictor = SVMWordPredictor.from_path(svm_word_predictor_path)
 
-        self.effdet_publaynet_predictor = LPBlockPredictor.from_pretrained(effdet_publaynet_predictor_path)
-        # self.effdet_mfd_predictor = LPBlockPredictor.from_pretrained(effdet_mfd_predictor_path)
+        self.publaynet_block_predictor = LPEffDetPubLayNetBlockPredictor.from_pretrained()
         self.ivila_predictor = IVILATokenClassificationPredictor.from_pretrained(ivila_predictor_path)
         self.bio_roberta_predictor = HFBIOTaggerPredictor.from_pretrained(
             bio_roberta_predictor_path,
@@ -127,7 +125,7 @@ class CoreRecipe(Recipe):
         self.logger.info("Predicting blocks...")
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            blocks = self.effdet_publaynet_predictor.predict(doc=doc)
+            blocks = self.publaynet_block_predictor.predict(doc=doc)
         doc.annotate_entity(field_name=BlocksFieldName, entities=blocks)
 
         self.logger.info("Predicting vila...")

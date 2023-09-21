@@ -13,7 +13,10 @@ from PIL import Image
 
 from papermage.magelib import Document
 from papermage.parsers.pdfplumber_parser import PDFPlumberParser
-from papermage.predictors import IVILATokenClassificationPredictor, LPBlockPredictor
+from papermage.predictors import (
+    IVILATokenClassificationPredictor,
+    LPEffDetPubLayNetBlockPredictor,
+)
 from papermage.rasterizers.rasterizer import PDF2ImageRasterizer
 
 
@@ -61,7 +64,7 @@ class TestFigureVilaPredictors(unittest.TestCase):
         cls.S2VL_LABEL_MAP = {int(key): val for key, val in cls.S2VL_LABEL_MAP.items()}
 
     def test_vila_predictors(self):
-        layout_predictor = LPBlockPredictor.from_pretrained("lp://efficientdet/PubLayNet")
+        layout_predictor = LPEffDetPubLayNetBlockPredictor.from_pretrained()
 
         pdfplumber_parser = PDFPlumberParser()
         rasterizer = PDF2ImageRasterizer()
@@ -76,9 +79,9 @@ class TestFigureVilaPredictors(unittest.TestCase):
         predictor_with_blocks = IVILATokenClassificationPredictor.from_pretrained(
             "allenai/ivila-block-layoutlm-finetuned-docbank"
         )
-        results_with_blocks = predictor_with_blocks.predict(doc, subpage_per_run=2)
+        results_with_blocks = predictor_with_blocks.predict(doc=doc)
 
         predictor_with_rows = IVILATokenClassificationPredictor.from_pretrained(
             "allenai/ivila-row-layoutlm-finetuned-s2vl-v2"
         )
-        results_with_rows = predictor_with_rows.predict(doc, subpage_per_run=2)
+        results_with_rows = predictor_with_rows.predict(doc=doc)

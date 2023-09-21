@@ -1,21 +1,21 @@
-from papermage.predictors.api_predictors.span_qa_predictor import APISpanQAPredictor
-from papermage.predictors.hf_predictors.bio_tagger_predictor import HFBIOTaggerPredictor
-from papermage.predictors.hf_predictors.vila_predictor import (
-    IVILATokenClassificationPredictor,
-)
-from papermage.predictors.hf_predictors.whitespace_predictor import WhitespacePredictor
-from papermage.predictors.lp_predictors.block_predictor import LPBlockPredictor
-from papermage.predictors.sklearn_predictors.word_predictor import SVMWordPredictor
-from papermage.predictors.spacy_predictors.sentence_predictor import (
-    PysbdSentencePredictor,
-)
+from papermage.predictors.base_predictors.base_predictor import BasePredictor
+from papermage.predictors.base_predictors.hf_predictors import HFBIOTaggerPredictor
+from papermage.predictors.block_predictors import LPEffDetPubLayNetBlockPredictor
+from papermage.predictors.formula_predictors import LPEffDetFormulaPredictor
+from papermage.predictors.sentence_predictors import PysbdSentencePredictor
+from papermage.predictors.span_qa_predictors import APISpanQAPredictor
+from papermage.predictors.token_predictors import HFWhitspaceTokenPredictor
+from papermage.predictors.vila_predictors import IVILATokenClassificationPredictor
+from papermage.predictors.word_predictors import SVMWordPredictor
 
 __all__ = [
     "HFBIOTaggerPredictor",
-    "APISpanQAPredictor",
-    "LPBlockPredictor",
     "IVILATokenClassificationPredictor",
-    "WhitespacePredictor",
+    "HFWhitspaceTokenPredictor",
     "SVMWordPredictor",
     "PysbdSentencePredictor",
+    "LPEffDetPubLayNetBlockPredictor",
+    "LPEffDetFormulaPredictor",
+    "APISpanQAPredictor",
+    "BasePredictor",
 ]

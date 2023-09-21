@@ -13,7 +13,9 @@ from papermage.recipes import CoreRecipe
 class TestCoreRecipe(unittest.TestCase):
     def setUp(self):
         self.fixture_path = pathlib.Path(__file__).parent.parent / "fixtures"
-        self.recipe = CoreRecipe()
+        self.recipe = CoreRecipe(
+            svm_word_predictor_path=str(self.fixture_path / "svm_word_predictor/svm_word_predictor.tar.gz")
+        )
 
     def test_stability(self):
         self.recipe.run(self.fixture_path / "1903.10676.pdf")

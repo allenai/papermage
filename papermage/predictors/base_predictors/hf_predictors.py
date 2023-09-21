@@ -4,6 +4,7 @@
 
 """
 
+import os
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -19,7 +20,10 @@ from smashed.interfaces.simple import (
 )
 
 from papermage.magelib import Annotation, Box, Document, Entity, Metadata, Span
-from papermage.predictors.base_predictor import BasePredictor
+
+from .base_predictor import BasePredictor
+
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
 class BIOBatch:
