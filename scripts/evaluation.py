@@ -10,8 +10,11 @@ from sklearn.metrics import classification_report
 
 from papermage.magelib import Box, Document, Entity, Image, Metadata, Span
 from papermage.parsers.grobid_parser import GrobidClient, GrobidFullParser
-from papermage.predictors import HFBIOTaggerPredictor, IVILATokenClassificationPredictor
-from papermage.predictors.base_predictors.base_predictor import BasePredictor
+from papermage.predictors import (
+    BasePredictor,
+    HFBIOTaggerPredictor,
+    IVILATokenClassificationPredictor,
+)
 
 with necessary("datasets"):
     import datasets

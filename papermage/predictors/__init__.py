@@ -1,3 +1,4 @@
+from papermage.predictors.base_predictors.base_predictor import BasePredictor
 from papermage.predictors.base_predictors.hf_predictors import HFBIOTaggerPredictor
 from papermage.predictors.block_predictors import LPEffDetPubLayNetBlockPredictor
 from papermage.predictors.formula_predictors import LPEffDetFormulaPredictor
@@ -16,4 +17,5 @@ __all__ = [
     "LPEffDetPubLayNetBlockPredictor",
     "LPEffDetFormulaPredictor",
     "APISpanQAPredictor",
+    "BasePredictor",
 ]
