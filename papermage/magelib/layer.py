@@ -20,7 +20,8 @@ class Layer:
         self.entities = entities
 
     def __repr__(self):
-        return f"Layer{self.entities}"
+        entity_repr = "\n".join([f"\t{e}" for e in self.entities])
+        return f"Layer with {len(self)} Entities:\n{entity_repr}"
 
     def __getitem__(self, key):
         return self.entities[key]

@@ -9,6 +9,7 @@ Needs to be imported in this order.
 
 from .annotation import Annotation
 from .box import Box
+from .layer import Layer
 from .document import (
     AbstractsFieldName,
     AlgorithmsFieldName,
@@ -70,6 +71,7 @@ __all__ = [
     "ImagesFieldName",
     "KeywordsFieldName",
     "KeywordsFieldName",
+    "Layer",
     "ListsFieldName",
     "Metadata",
     "MetadataFieldName",
