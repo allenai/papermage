@@ -268,10 +268,6 @@ class BaseSinglePageTokenClassificationPredictor(BasePredictor):
         return prediction_spans
 
 
-class SinglePageTokenClassificationPredictor(BaseSinglePageTokenClassificationPredictor):
-    VILA_MODEL_CLASS = SimplePDFPredictor
-
-
 class IVILATokenClassificationPredictor(BaseSinglePageTokenClassificationPredictor):
     VILA_MODEL_CLASS = LayoutIndicatorPDFPredictor
 
