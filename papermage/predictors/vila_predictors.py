@@ -21,7 +21,6 @@ from tqdm import tqdm
 from vila.predictors import LayoutIndicatorPDFPredictor, SimplePDFPredictor
 
 from papermage.magelib import (
-    Annotation,
     BlocksFieldName,
     Document,
     Entity,
@@ -225,7 +224,7 @@ class BaseSinglePageTokenClassificationPredictor(BasePredictor):
 
         return cls(predictor, subpage_per_run)
 
-    def _predict(self, doc: Document, subpage_per_run: Optional[int] = None) -> List[Annotation]:
+    def _predict(self, doc: Document, subpage_per_run: Optional[int] = None) -> List[Entity]:
         page_prediction_results = []
         for page_id, page in enumerate(doc.pages):
             if page.tokens:

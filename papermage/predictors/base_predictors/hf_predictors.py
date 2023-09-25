@@ -19,7 +19,7 @@ from smashed.interfaces.simple import (
     UnpackingMapper,
 )
 
-from papermage.magelib import Annotation, Box, Document, Entity, Metadata, Span
+from papermage.magelib import Box, Document, Entity, Metadata, Span
 
 from .base_predictor import BasePredictor
 
@@ -256,15 +256,15 @@ class HFBIOTaggerPredictor(BasePredictor):
             for batch_dict in batch_dicts
         ]
 
-    def combine_annotations(self, annotations: List[Entity]) -> Annotation:
-        label = annotations[0].metadata.label[2:]  # remove the B-
-        scores = [annotation.metadata.score for annotation in annotations]
-        span = Span.create_enclosing_span([span for annotation in annotations for span in annotation.spans])
-        smaller_boxes = [box for annotation in annotations for box in annotation.boxes]
+    def combine_entities(self, entities: List[Entity]) -> Entity:
+        label = entities[0].metadata.label[2:]  # remove the B-
+        scores = [annotation.metadata.score for annotation in entities]
+        span = Span.create_enclosing_span([span for annotation in entities for span in annotation.spans])
+        smaller_boxes = [box for annotation in entities for box in annotation.boxes]
         # For now, don't merge boxes because they can be on different pages
         # group boxes by page
         smaller_boxes_by_page = defaultdict(list)
-        for annotation in annotations:
+        for annotation in entities:
             for box in annotation.boxes:
                 smaller_boxes_by_page[box.page].append(box)
         smaller_boxes = [Box.create_enclosing_box(boxes) for boxes in smaller_boxes_by_page.values() if boxes]
@@ -277,7 +277,7 @@ class HFBIOTaggerPredictor(BasePredictor):
 
     def postprocess(
         self, doc: Document, context_name: str, preds: List[BIOPrediction], merge_tokens: bool = True
-    ) -> List[Annotation]:
+    ) -> List[Entity]:
         """This function handles a bunch of nonsense that happens with Huggingface models &
         how we processed the data.  Namely:
 
@@ -297,8 +297,8 @@ class HFBIOTaggerPredictor(BasePredictor):
             context_id_to_entity_id_to_pred[prediction.context_id][prediction.entity_id] = prediction
 
         # (2) iterate through original data to check against that Lookup
-        annotations: List[Annotation] = []
-        field_annotations: List[Entity] = []
+        entities: List[Entity] = []
+        field_entities: List[Entity] = []
         for i, context in enumerate(getattr(doc, context_name)):
             for j, entity in enumerate(getattr(context, self.entity_name)):
                 pred: Optional[BIOPrediction] = context_id_to_entity_id_to_pred[i].get(j, None)
@@ -319,29 +319,29 @@ class HFBIOTaggerPredictor(BasePredictor):
                 if merge_tokens:
                     if new_entity.metadata.label is None or new_entity.metadata.label.startswith("I"):
                         # Either "I", so we're in the same field or "None", so we're in the same word-piece
-                        field_annotations.append(new_entity)
+                        field_entities.append(new_entity)
                     elif new_entity.metadata.label.startswith("B"):
                         # end the last annotation
-                        if field_annotations:
-                            annotations.append(self.combine_annotations(field_annotations))
-                        field_annotations = [new_entity]
+                        if field_entities:
+                            entities.append(self.combine_entities(field_entities))
+                        field_entities = [new_entity]
                     elif new_entity.metadata.label == "O":
                         # end the last annotation
-                        if field_annotations:
-                            annotations.append(self.combine_annotations(field_annotations))
-                        field_annotations = []
+                        if field_entities:
+                            entities.append(self.combine_entities(field_entities))
+                        field_entities = []
                     else:
                         raise ValueError(
                             f"Invalid label: {new_entity.metadata.label}. BIO labels should start with B, I, or O."
                         )
                 else:
-                    annotations.append(new_entity)
-        if merge_tokens and field_annotations:
-            annotations.append(self.combine_annotations(field_annotations))
+                    entities.append(new_entity)
+        if merge_tokens and field_entities:
+            entities.append(self.combine_entities(field_entities))
 
-        return annotations
+        return entities
 
-    def _predict(self, doc: Document) -> List[Annotation]:
+    def _predict(self, doc: Document) -> List[Entity]:
         # (1) Make batches
         batches: List[BIOBatch] = self.preprocess(doc=doc, context_name=self.context_name)
 
@@ -351,9 +351,9 @@ class HFBIOTaggerPredictor(BasePredictor):
             for pred in self._predict_batch(batch=batch):
                 preds.append(pred)
 
-        # (3) Postprocess into proper Annotations
-        annotations = self.postprocess(doc=doc, context_name=self.context_name, preds=preds)
-        return annotations
+        # (3) Postprocess into proper Entities
+        entities = self.postprocess(doc=doc, context_name=self.context_name, preds=preds)
+        return entities
 
     def _predict_batch(
         self, batch: BIOBatch, device: Union[None, str, torch.device] = None

@@ -29,7 +29,8 @@ class Entity:
         self.boxes = boxes if boxes else []
         self.images = images if images else []
         self.metadata = metadata if metadata else Metadata()
-        super().__init__()
+        self._id = None
+        self._doc = None
 
     def __repr__(self):
         if self.doc:

@@ -9,7 +9,7 @@ Base class for Predictors.
 from abc import abstractmethod
 from typing import Any, Dict, List, Union
 
-from papermage.magelib import Annotation, Document
+from papermage.magelib import Document, Entity
 
 
 class BasePredictor:
@@ -31,7 +31,7 @@ class BasePredictor:
                     field in doc.fields
                 ), f"The input Document object {doc} doesn't contain the required field {field}"
 
-    def predict(self, doc: Document) -> List[Annotation]:
+    def predict(self, doc: Document) -> List[Entity]:
         """For all the predictors, the input is a document object, and
         the output is a list of annotations.
         """
@@ -39,5 +39,5 @@ class BasePredictor:
         return self._predict(doc=doc)
 
     @abstractmethod
-    def _predict(self, doc: Document) -> List[Annotation]:
+    def _predict(self, doc: Document) -> List[Entity]:
         raise NotImplementedError

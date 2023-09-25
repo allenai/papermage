@@ -12,7 +12,6 @@ import layoutparser as lp
 from tqdm import tqdm
 
 from papermage.magelib import (
-    Annotation,
     Box,
     Document,
     Entity,
@@ -59,7 +58,7 @@ class LPPredictor(BasePredictor):
 
         return cls(model)
 
-    def postprocess(self, model_outputs: lp.Layout, page_index: int, image: Image) -> List[Annotation]:
+    def postprocess(self, model_outputs: lp.Layout, page_index: int, image: Image) -> List[Entity]:
         """Convert the model outputs into the papermage format
 
         Args:
@@ -74,7 +73,7 @@ class LPPredictor(BasePredictor):
                 to relative coordinates for the box objects
 
         Returns:
-            List[Annotation]:
+            List[Entity]:
             The detected layout stored in a list of Entities.
         """
 
@@ -101,7 +100,7 @@ class LPPredictor(BasePredictor):
             for block in model_outputs
         ]
 
-    def _predict(self, doc: Document) -> List[Annotation]:
+    def _predict(self, doc: Document) -> List[Entity]:
         """Returns a list of Entities for the detected layouts for all pages
 
         Args:
@@ -109,7 +108,7 @@ class LPPredictor(BasePredictor):
                 The input document object
 
         Returns:
-            List[Annotation]:
+            List[Entity]:
                 The returned Entities for the detected layouts for all pages
         """
         document_prediction = []

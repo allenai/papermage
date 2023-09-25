@@ -7,7 +7,6 @@ Needs to be imported in this order.
 """
 
 
-from .annotation import Annotation
 from .box import Box
 from .layer import Layer
 from .document import (
@@ -50,7 +49,6 @@ from .span import Span
 __all__ = [
     "AbstractsFieldName",
     "AlgorithmsFieldName",
-    "Annotation",
     "AuthorsFieldName",
     "BibliographiesFieldName",
     "BlocksFieldName",

@@ -88,7 +88,7 @@ def find_contiguous_ones(array):
 class GrobidFullParser(Parser):
     """Grobid parser that uses Grobid python client to hit a running
     Grobid server and convert resulting grobid XML TEI coordinates into
-    PaperMage Annotations to annotate an existing Document.
+    PaperMage Entities to annotate an existing Document.
 
     Run a Grobid server (from https://grobid.readthedocs.io/en/latest/Grobid-docker/):
     > docker pull lfoppiano/grobid:0.7.2
