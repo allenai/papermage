@@ -11,6 +11,7 @@ from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 from .span import Span
 from .box import Box
 from .image import Image
+from .layer import Layer
 from .metadata import Metadata
 from .entity import Entity
 from .indexer import EntitySpanIndexer, EntityBoxIndexer
@@ -67,21 +68,21 @@ class Document:
     def fields(self) -> List[str]:
         return list(self.__entity_span_indexers.keys()) + self.SPECIAL_FIELDS
 
-    def find(self, query: Union[Span, Box], field_name: str) -> List[Entity]:
+    def find(self, query: Union[Span, Box], field_name: str) -> Layer:
         if isinstance(query, Span):
-            return self.__entity_span_indexers[field_name].find(query=Entity(spans=[query]))
+            return Layer(self.__entity_span_indexers[field_name].find(query=Entity(spans=[query])))
         elif isinstance(query, Box):
-            return self.__entity_box_indexers[field_name].find(query=Entity(boxes=[query]))
+            return Layer(self.__entity_box_indexers[field_name].find(query=Entity(boxes=[query])))
         else:
             raise TypeError(f"Unsupported query type {type(query)}")
 
-    def find_by_span(self, query: Entity, field_name: str) -> List[Entity]:
+    def find_by_span(self, query: Entity, field_name: str) -> Layer:
         # TODO: will rename this to `intersect_by_span`
-        return self.__entity_span_indexers[field_name].find(query=query)
+        return Layer(self.__entity_span_indexers[field_name].find(query=query))
 
-    def find_by_box(self, query: Entity, field_name: str) -> List[Entity]:
+    def find_by_box(self, query: Entity, field_name: str) -> Layer:
         # TODO: will rename this to `intersect_by_span`
-        return self.__entity_box_indexers[field_name].find(query=query)
+        return Layer(self.__entity_box_indexers[field_name].find(query=query))
 
     def check_field_name_availability(self, field_name: str) -> None:
         if field_name in self.SPECIAL_FIELDS:
@@ -91,7 +92,7 @@ class Document:
         if field_name in dir(self):
             raise AssertionError(f"{field_name} clashes with Document class properties.")
 
-    def get_entity(self, field_name: str) -> List[Entity]:
+    def get_entity(self, field_name: str) -> Layer:
         return getattr(self, field_name)
 
     def annotate(self, *predictions: Union[Prediction, Tuple[Prediction, ...]]) -> None:
@@ -108,7 +109,7 @@ class Document:
 
         self.__entity_span_indexers[field_name] = EntitySpanIndexer(entities=entities)
         self.__entity_box_indexers[field_name] = EntityBoxIndexer(entities=entities)
-        setattr(self, field_name, entities)
+        setattr(self, field_name, Layer(entities))
 
     def remove_entity(self, field_name: str):
         for entity in getattr(self, field_name):

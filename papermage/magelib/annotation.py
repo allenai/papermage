@@ -63,7 +63,7 @@ class Annotation:
     def from_json(cls, annotation_json: Union[Dict, List]) -> "Annotation":
         pass
 
-    def __getattr__(self, field: str) -> List["Annotation"]:
+    def __getattr__(self, field: str) -> "Layer":
         """This Overloading is convenient syntax since the `entity.layer` operation is intuitive for folks."""
         try:
             return self.find_by_span(field=field)
@@ -71,7 +71,7 @@ class Annotation:
             # maybe users just want some attribute of the Annotation object
             return self.__getattribute__(field)
 
-    def find_by_span(self, field: str) -> List["Annotation"]:
+    def find_by_span(self, field: str) -> "Layer":
         """This method allows you to access overlapping Annotations
         within the Document based on Span"""
         if self.doc is None:
@@ -82,7 +82,7 @@ class Annotation:
         else:
             raise ValueError(f"Field {field} not found in Document")
 
-    def find_by_box(self, field: str) -> List["Annotation"]:
+    def find_by_box(self, field: str) -> "Layer":
         """This method allows you to access overlapping Annotations
         within the Document based on Box"""
 

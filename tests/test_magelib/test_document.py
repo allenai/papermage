@@ -111,43 +111,43 @@ class TestDocument(unittest.TestCase):
         doc.annotate_entity(field_name="chunks", entities=chunks)
 
         # find by span is the default overload of Entity.__attr__
-        self.assertListEqual(doc.chunks[0].tokens, tokens[0:3])
-        self.assertListEqual(doc.chunks[1].tokens, tokens[3:5])
-        self.assertListEqual(doc.chunks[2].tokens, [tokens[5]])
+        self.assertSequenceEqual(doc.chunks[0].tokens, tokens[0:3])
+        self.assertSequenceEqual(doc.chunks[1].tokens, tokens[3:5])
+        self.assertSequenceEqual(doc.chunks[2].tokens, [tokens[5]])
 
         # backwards
-        self.assertListEqual(doc.tokens[0].chunks, [chunks[0]])
-        self.assertListEqual(doc.tokens[1].chunks, [chunks[0]])
-        self.assertListEqual(doc.tokens[2].chunks, [chunks[0]])
-        self.assertListEqual(doc.tokens[3].chunks, [chunks[1]])
-        self.assertListEqual(doc.tokens[4].chunks, [chunks[1]])
-        self.assertListEqual(doc.tokens[5].chunks, [chunks[2]])
+        self.assertSequenceEqual(doc.tokens[0].chunks, [chunks[0]])
+        self.assertSequenceEqual(doc.tokens[1].chunks, [chunks[0]])
+        self.assertSequenceEqual(doc.tokens[2].chunks, [chunks[0]])
+        self.assertSequenceEqual(doc.tokens[3].chunks, [chunks[1]])
+        self.assertSequenceEqual(doc.tokens[4].chunks, [chunks[1]])
+        self.assertSequenceEqual(doc.tokens[5].chunks, [chunks[2]])
 
         # find by span works fine
-        self.assertListEqual(doc.chunks[0].tokens, doc.find_by_span(query=doc.chunks[0], field_name="tokens"))
-        self.assertListEqual(doc.chunks[1].tokens, doc.find_by_span(query=doc.chunks[1], field_name="tokens"))
-        self.assertListEqual(doc.chunks[2].tokens, doc.find_by_span(query=doc.chunks[2], field_name="tokens"))
+        self.assertSequenceEqual(doc.chunks[0].tokens, doc.find_by_span(query=doc.chunks[0], field_name="tokens"))
+        self.assertSequenceEqual(doc.chunks[1].tokens, doc.find_by_span(query=doc.chunks[1], field_name="tokens"))
+        self.assertSequenceEqual(doc.chunks[2].tokens, doc.find_by_span(query=doc.chunks[2], field_name="tokens"))
 
         # backwards
-        self.assertListEqual(doc.tokens[0].chunks, doc.find_by_span(query=doc.tokens[0], field_name="chunks"))
-        self.assertListEqual(doc.tokens[1].chunks, doc.find_by_span(query=doc.tokens[1], field_name="chunks"))
-        self.assertListEqual(doc.tokens[2].chunks, doc.find_by_span(query=doc.tokens[2], field_name="chunks"))
-        self.assertListEqual(doc.tokens[3].chunks, doc.find_by_span(query=doc.tokens[3], field_name="chunks"))
-        self.assertListEqual(doc.tokens[4].chunks, doc.find_by_span(query=doc.tokens[4], field_name="chunks"))
-        self.assertListEqual(doc.tokens[5].chunks, doc.find_by_span(query=doc.tokens[5], field_name="chunks"))
+        self.assertSequenceEqual(doc.tokens[0].chunks, doc.find_by_span(query=doc.tokens[0], field_name="chunks"))
+        self.assertSequenceEqual(doc.tokens[1].chunks, doc.find_by_span(query=doc.tokens[1], field_name="chunks"))
+        self.assertSequenceEqual(doc.tokens[2].chunks, doc.find_by_span(query=doc.tokens[2], field_name="chunks"))
+        self.assertSequenceEqual(doc.tokens[3].chunks, doc.find_by_span(query=doc.tokens[3], field_name="chunks"))
+        self.assertSequenceEqual(doc.tokens[4].chunks, doc.find_by_span(query=doc.tokens[4], field_name="chunks"))
+        self.assertSequenceEqual(doc.tokens[5].chunks, doc.find_by_span(query=doc.tokens[5], field_name="chunks"))
 
         # find by box
-        self.assertListEqual(doc.find_by_box(query=doc.chunks[0], field_name="tokens"), doc.tokens[0:3])
-        self.assertListEqual(doc.find_by_box(query=doc.chunks[1], field_name="tokens"), doc.tokens[3:6])
-        self.assertListEqual(doc.find_by_box(query=doc.chunks[2], field_name="tokens"), [])
+        self.assertSequenceEqual(doc.find_by_box(query=doc.chunks[0], field_name="tokens"), doc.tokens[0:3])
+        self.assertSequenceEqual(doc.find_by_box(query=doc.chunks[1], field_name="tokens"), doc.tokens[3:6])
+        self.assertSequenceEqual(doc.find_by_box(query=doc.chunks[2], field_name="tokens"), [])
 
         # backwards
-        self.assertListEqual(doc.find_by_box(query=doc.tokens[0], field_name="chunks"), [chunks[0]])
-        self.assertListEqual(doc.find_by_box(query=doc.tokens[1], field_name="chunks"), [chunks[0]])
-        self.assertListEqual(doc.find_by_box(query=doc.tokens[2], field_name="chunks"), [chunks[0]])
-        self.assertListEqual(doc.find_by_box(query=doc.tokens[3], field_name="chunks"), [chunks[1]])
-        self.assertListEqual(doc.find_by_box(query=doc.tokens[4], field_name="chunks"), [chunks[1]])
-        self.assertListEqual(doc.find_by_box(query=doc.tokens[5], field_name="chunks"), [chunks[1]])
+        self.assertSequenceEqual(doc.find_by_box(query=doc.tokens[0], field_name="chunks"), [chunks[0]])
+        self.assertSequenceEqual(doc.find_by_box(query=doc.tokens[1], field_name="chunks"), [chunks[0]])
+        self.assertSequenceEqual(doc.find_by_box(query=doc.tokens[2], field_name="chunks"), [chunks[0]])
+        self.assertSequenceEqual(doc.find_by_box(query=doc.tokens[3], field_name="chunks"), [chunks[1]])
+        self.assertSequenceEqual(doc.find_by_box(query=doc.tokens[4], field_name="chunks"), [chunks[1]])
+        self.assertSequenceEqual(doc.find_by_box(query=doc.tokens[5], field_name="chunks"), [chunks[1]])
 
     def test_cross_referencing_with_missing_entity_fields(self):
         """What happens when annotate a Doc with entiites missing spans or boxes?
@@ -169,18 +169,18 @@ class TestDocument(unittest.TestCase):
         ]
         doc.annotate_entity(field_name="tokens", entities=tokens)
         doc.annotate_entity(field_name="chunks", entities=chunks)
-        self.assertListEqual(doc.find_by_box(query=doc.chunks[0], field_name="tokens"), [])
-        self.assertListEqual(doc.find_by_box(query=doc.chunks[1], field_name="tokens"), [])
-        self.assertListEqual(doc.find_by_box(query=doc.chunks[2], field_name="tokens"), [])
-        self.assertListEqual(doc.find_by_span(query=doc.chunks[0], field_name="tokens"), [])
-        self.assertListEqual(doc.find_by_span(query=doc.chunks[1], field_name="tokens"), [])
-        self.assertListEqual(doc.find_by_span(query=doc.chunks[2], field_name="tokens"), [])
-        self.assertListEqual(doc.find_by_box(query=doc.tokens[0], field_name="chunks"), [])
-        self.assertListEqual(doc.find_by_box(query=doc.tokens[1], field_name="chunks"), [])
-        self.assertListEqual(doc.find_by_box(query=doc.tokens[2], field_name="chunks"), [])
-        self.assertListEqual(doc.find_by_span(query=doc.tokens[0], field_name="chunks"), [])
-        self.assertListEqual(doc.find_by_span(query=doc.tokens[1], field_name="chunks"), [])
-        self.assertListEqual(doc.find_by_span(query=doc.tokens[2], field_name="chunks"), [])
+        self.assertSequenceEqual(doc.find_by_box(query=doc.chunks[0], field_name="tokens"), [])
+        self.assertSequenceEqual(doc.find_by_box(query=doc.chunks[1], field_name="tokens"), [])
+        self.assertSequenceEqual(doc.find_by_box(query=doc.chunks[2], field_name="tokens"), [])
+        self.assertSequenceEqual(doc.find_by_span(query=doc.chunks[0], field_name="tokens"), [])
+        self.assertSequenceEqual(doc.find_by_span(query=doc.chunks[1], field_name="tokens"), [])
+        self.assertSequenceEqual(doc.find_by_span(query=doc.chunks[2], field_name="tokens"), [])
+        self.assertSequenceEqual(doc.find_by_box(query=doc.tokens[0], field_name="chunks"), [])
+        self.assertSequenceEqual(doc.find_by_box(query=doc.tokens[1], field_name="chunks"), [])
+        self.assertSequenceEqual(doc.find_by_box(query=doc.tokens[2], field_name="chunks"), [])
+        self.assertSequenceEqual(doc.find_by_span(query=doc.tokens[0], field_name="chunks"), [])
+        self.assertSequenceEqual(doc.find_by_span(query=doc.tokens[1], field_name="chunks"), [])
+        self.assertSequenceEqual(doc.find_by_span(query=doc.tokens[2], field_name="chunks"), [])
 
     def test_query(self):
         doc = Document("This is a test document!")
@@ -201,12 +201,12 @@ class TestDocument(unittest.TestCase):
         doc.annotate_entity(field_name="chunks", entities=chunks)
 
         # test query by span
-        self.assertListEqual(
+        self.assertSequenceEqual(
             doc.find_by_span(query=doc.chunks[0], field_name="tokens"),
             doc.find(query=doc.chunks[0].spans[0], field_name="tokens"),
         )
         # test query by box
-        self.assertListEqual(
+        self.assertSequenceEqual(
             doc.find_by_box(query=doc.chunks[0], field_name="tokens"),
             doc.find(query=doc.chunks[0].boxes[0], field_name="tokens"),
         )
