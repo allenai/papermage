@@ -4,16 +4,18 @@ An annotated "unit" on a Document.
 
 """
 
-from typing import Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
-from .annotation import Annotation
 from .box import Box
 from .image import Image
 from .metadata import Metadata
 from .span import Span
 
+if TYPE_CHECKING:
+    from .document import Document
 
-class Entity(Annotation):
+
+class Entity:
     def __init__(
         self,
         spans: Optional[List[Span]] = None,
@@ -27,7 +29,8 @@ class Entity(Annotation):
         self.boxes = boxes if boxes else []
         self.images = images if images else []
         self.metadata = metadata if metadata else Metadata()
-        super().__init__()
+        self._id = None
+        self._doc = None
 
     def __repr__(self):
         if self.doc:
@@ -50,6 +53,45 @@ class Entity(Annotation):
             boxes=[Box.from_json(box_json=box_json) for box_json in entity_json.get("boxes", [])],
             metadata=Metadata.from_json(entity_json.get("metadata", {})),
         )
+
+    @property
+    def doc(self) -> Optional["Document"]:
+        return self._doc
+
+    @doc.setter
+    def doc(self, doc: Optional["Document"]) -> None:
+        """This method attaches a Document to this Entity, allowing the Entity
+        to access things beyond itself within the Document (e.g. neighboring entities)"""
+        if self.doc and doc:
+            raise AttributeError(
+                "Already has an attached Document. Since Entity should be"
+                "specific to a given Document, we recommend creating a new"
+                "Entity from scratch and then attaching your Document."
+            )
+        self._doc = doc
+
+    @property
+    def id(self) -> Optional[int]:
+        return self._id
+
+    @id.setter
+    def id(self, id: int) -> None:
+        """This method assigns an ID to an Entity. Requires a Document to be attached
+        to this Entity. ID basically gives the Entity itself awareness of its
+        position within the broader Document."""
+        if self.id:
+            raise AttributeError(f"This Entity already has an ID: {self.id}")
+        if not self.doc:
+            raise AttributeError("This Entity is missing a Document")
+        self._id = id
+
+    def __getattr__(self, field: str) -> List["Entity"]:
+        """This Overloading is convenient syntax since the `entity.layer` operation is intuitive for folks."""
+        try:
+            return self.find_by_span(field=field)
+        except ValueError:
+            # maybe users just want some attribute of the Entity object
+            return self.__getattribute__(field)
 
     @property
     def start(self) -> Union[int, float]:
@@ -101,3 +143,26 @@ class Entity(Annotation):
             return self.id < other.id
         else:
             return self.start < other.start
+
+    def find_by_span(self, field: str) -> List["Entity"]:
+        """This method allows you to access overlapping Entities
+        within the Document based on Span"""
+        if self.doc is None:
+            raise ValueError("This entity is not attached to a document")
+
+        if field in self.doc.fields:
+            return self.doc.find_by_span(self, field)
+        else:
+            raise ValueError(f"Field {field} not found in Document")
+
+    def find_by_box(self, field: str) -> List["Entity"]:
+        """This method allows you to access overlapping Entities
+        within the Document based on Box"""
+
+        if self.doc is None:
+            raise ValueError("This entity is not attached to a document")
+
+        if field in self.doc.fields:
+            return self.doc.find_by_box(self, field)
+        else:
+            raise ValueError(f"Field {field} not found in Document")

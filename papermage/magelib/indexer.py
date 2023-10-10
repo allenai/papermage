@@ -12,18 +12,17 @@ from typing import List
 import numpy as np
 from ncls import NCLS
 
-from .annotation import Annotation
 from .box import Box
 from .entity import Entity
 
 
 class Indexer:
-    """Stores an index for a particular collection of Annotations.
+    """Stores an index for a particular collection of Entities.
     Indexes in this library focus on *INTERSECT* relations."""
 
     @abstractmethod
-    def find(self, query: Annotation) -> List[Annotation]:
-        """Returns all matching Annotations given a suitable query"""
+    def find(self, query: Entity) -> List[Entity]:
+        """Returns all matching Entities given a suitable query"""
         raise NotImplementedError()
 
 

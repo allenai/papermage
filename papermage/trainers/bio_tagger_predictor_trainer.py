@@ -358,7 +358,7 @@ class HFBIOTaggerPredictorTrainer:
             all_batches = cached_data["batches"]
             all_gold_labels = cached_data["labels"]
 
-        all_annotations = []
+        all_entities = []
         all_extracted_text = []
         for document, batches in tqdm(zip(docs, all_batches), desc="evaluating", total=len(all_batches)):
             # What I want: two lists. one of predicted labels and one of gold labels
@@ -371,17 +371,17 @@ class HFBIOTaggerPredictorTrainer:
                     preds.append(pred)
             all_pred_labels.append([pred.label for pred in preds])
 
-            # (3) Postprocess into proper Annotations
-            annotations = self.predictor.predictor.postprocess(
+            # (3) Postprocess into proper Entities
+            entities = self.predictor.predictor.postprocess(
                 doc=document, context_name=self.predictor.context_name, preds=preds, merge_tokens=False
             )
 
-            all_annotations.append(annotations)
+            all_entities.append(entities)
 
             extracted_text = []
-            for annotation in annotations:
-                if annotation.metadata["label"] != "O":
-                    extracted_text.append(document.symbols[annotation.spans[0].start : annotation.spans[0].end])
+            for entity in entities:
+                if entity.metadata["label"] != "O":
+                    extracted_text.append(document.symbols[entity.spans[0].start : entity.spans[0].end])
             all_extracted_text.append(extracted_text)
 
         # Calculate precision, recall, f1, accuracy at the span level and token level
@@ -413,7 +413,7 @@ class HFBIOTaggerPredictorTrainer:
                     "y_gold": all_gold_labels,
                     "y_hat": all_pred_labels,
                     "annotations": [
-                        [annotation.to_json() for annotation in annotations] for annotations in all_annotations
+                        [annotation.to_json() for annotation in annotations] for annotations in all_entities
                     ],
                 },
                 f,

@@ -17,7 +17,7 @@ from decontext.data_types import (
 )
 from decontext.step.qa import TemplateRetrievalQAStep
 
-from papermage.magelib import Annotation, Document, Entity
+from papermage.magelib import Document, Entity
 from papermage.predictors import BasePredictor
 
 
@@ -70,7 +70,7 @@ class APISpanQAPredictor(BasePredictor):
 
         return paper_snippet
 
-    def _predict(self, doc: Document) -> List[Annotation]:
+    def _predict(self, doc: Document) -> List[Entity]:
         # preprocess to format this for decontext
         paper_snippet = self.preprocess(doc)
 
@@ -78,7 +78,7 @@ class APISpanQAPredictor(BasePredictor):
         self.retrieval_qa_step.run(paper_snippet)
 
         # postprocess to format back into papermage doc format
-        annotations: List[Annotation] = []
+        entities: List[Entity] = []
 
         # add the question and answer to a copy of the user selected span
         user_selected_span = getattr(doc, self.span_name)
@@ -86,20 +86,20 @@ class APISpanQAPredictor(BasePredictor):
         new_user_selected_span.metadata["type"] = "answer"
         new_user_selected_span.metadata["question"] = paper_snippet.qae[0].question
         new_user_selected_span.metadata["answer"] = paper_snippet.qae[0].answer
-        annotations.append(new_user_selected_span)
+        entities.append(new_user_selected_span)
 
         # add the context with span
         context_with_span = getattr(getattr(doc, self.span_name)[0], self.context_unit_name)[0]
         # context_with_span = doc.get_entity(self.context_unit_name)[paper_snippet.paragraph_with_snippet.index]
         new_context_with_span = Entity.from_json(context_with_span.to_json())
         new_context_with_span.metadata["type"] = "context_with_span"
-        annotations.append(new_context_with_span)
+        entities.append(new_context_with_span)
 
         # add the evidence entities
         for evidence in paper_snippet.qae[0].evidence:
             entity = doc.get_entity(self.context_unit_name)[evidence.index]
             new_entity = Entity.from_json(entity.to_json())
             new_entity.metadata["type"] = "evidence"
-            annotations.append(new_entity)
+            entities.append(new_entity)
 
-        return annotations
+        return entities

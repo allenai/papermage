@@ -9,6 +9,10 @@ import unittest
 from papermage.magelib import Box, Entity, Metadata, Span
 
 
+class DummyDoc:
+    pass
+
+
 class TestEntity(unittest.TestCase):
     def test_create_empty(self):
         with self.assertRaises(ValueError):
@@ -92,3 +96,38 @@ class TestEntity(unittest.TestCase):
         )
         entity2 = Entity.from_json(entity.to_json())
         self.assertDictEqual(entity2.to_json(), entity.to_json())
+
+    def test_doc(self):
+        d = DummyDoc()
+        a = Entity(spans=[Span(0, 1)])
+
+        # defaults to None
+        self.assertIsNone(a.doc)
+
+        # attaches reference to the Doc object
+        a.doc = d
+        self.assertIs(a.doc, d)
+
+        # protected setter
+        with self.assertRaises(AttributeError) as e:
+            a.doc = DummyDoc()
+
+        # detaches from Doc
+        a.doc = None
+        self.assertIsNone(a.doc)
+
+    def test_id(self):
+        a = Entity(spans=[Span(0, 1)])
+
+        # defaults to None
+        self.assertIsNone(a.id)
+
+        # setting id doesnt work without Doc
+        with self.assertRaises(AttributeError):
+            a.id = 12345
+
+        # setting id works w/ a Doc first
+        d = DummyDoc()
+        a.doc = d
+        a.id = 12345
+        self.assertEqual(a.id, 12345)

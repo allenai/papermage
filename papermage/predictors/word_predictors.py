@@ -25,7 +25,6 @@ from joblib import load
 from scipy.sparse import hstack
 
 from papermage.magelib import (
-    Annotation,
     Document,
     Entity,
     Metadata,
@@ -40,7 +39,7 @@ from papermage.predictors.token_predictors import HFWhitspaceTokenPredictor
 logger = logging.getLogger(__name__)
 
 
-def make_text(entity: Union[Entity, Annotation], document: Document, field: str = WordsFieldName) -> str:
+def make_text(entity: Entity, document: Document, field: str = WordsFieldName) -> str:
     candidate_words = document.find_by_span(entity, field)
     candidate_text: List[str] = []
 
