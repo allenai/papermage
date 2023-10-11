@@ -16,6 +16,8 @@ if TYPE_CHECKING:
 
 
 class Entity:
+    __slots__ = ["spans", "boxes", "images", "metadata", "_id", "_doc"]
+
     def __init__(
         self,
         spans: Optional[List[Span]] = None,

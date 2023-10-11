@@ -17,6 +17,8 @@ from PIL.Image import Image as PILImageClass
 
 
 class Image:
+    __slots__ = ["_pilimage"]
+
     def __init__(self):
         self._pilimage = None
 
