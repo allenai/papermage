@@ -115,6 +115,10 @@ dev = [
 visualizers = [
     'layoutparser==0.3.4'
 ]
+qa = [
+    'tokreate',
+    'pysbd'
+]
 predictors = [
     'thefuzz[speedup]',
     'scikit-learn>=1.3.0',
