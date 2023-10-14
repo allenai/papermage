@@ -11,7 +11,6 @@ from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 from .box import Box
 from .entity import Entity
 from .image import Image
-from .indexer import EntityBoxIndexer, EntitySpanIndexer
 from .layer import Layer
 from .metadata import Metadata
 from .span import Span
@@ -76,34 +75,17 @@ class Document:
         if not self.symbols and not self.images:
             raise ValueError("Document must have at least one of `symbols` or `images`")
         self.metadata = metadata if metadata else Metadata()
-        self.__entity_span_indexers: Dict[str, EntitySpanIndexer] = {}
-        self.__entity_box_indexers: Dict[str, EntityBoxIndexer] = {}
+        self._layers: List[str] = []
 
     @property
     def layers(self) -> List[str]:
-        return self.SPECIAL_FIELDS + list(self.__entity_span_indexers.keys())
-
-    def find(self, query: Union[Span, Box], field_name: str) -> List[Entity]:
-        if isinstance(query, Span):
-            return self.intersect_by_span(query=Entity(spans=[query]), field_name=field_name)
-            # return self.__entity_span_indexers[field_name].find(query=Entity(spans=[query]))
-        elif isinstance(query, Box):
-            return self.intersect_by_box(query=Entity(boxes=[query]), field_name=field_name)
-            # return self.__entity_box_indexers[field_name].find(query=Entity(boxes=[query]))
-        else:
-            raise TypeError(f"Unsupported query type {type(query)}")
-
-    def intersect_by_span(self, query: Entity, field_name: str) -> List[Entity]:
-        return self.__entity_span_indexers[field_name].find(query=query)
-
-    def intersect_by_box(self, query: Entity, field_name: str) -> List[Entity]:
-        return self.__entity_box_indexers[field_name].find(query=query)
+        return self.SPECIAL_FIELDS + self._layers
 
     def validate_layer_name_availability(self, name: str) -> None:
-        if name in self.SPECIAL_FIELDS:
+        if name in self.layers:
             raise AssertionError(f"{name} not allowed Document.SPECIAL_FIELDS.")
-        if name in self.__entity_span_indexers.keys():
-            raise AssertionError(f'{name} already exists. Try `doc.remove_entity("{name}")` first.')
+        if name in self.layers:
+            raise AssertionError(f'{name} already exists. Try `doc.remove_layer("{name}")` first.')
         if name in dir(self):
             raise AssertionError(f"{name} clashes with Document class properties.")
 
@@ -117,24 +99,27 @@ class Document:
         for prediction in all_preds:
             self.annotate_layer(name=prediction.name, entities=prediction.entities)
 
-    def annotate_layer(self, name: str, entities: List[Entity]) -> None:
+    def annotate_layer(self, name: str, entities: Union[List[Entity], Layer]) -> None:
         self.validate_layer_name_availability(name=name)
 
-        for i, entity in enumerate(entities):
-            entity.doc = self
-            entity.id = i
+        if isinstance(entities, list):
+            layer = Layer(entities=entities)
+        else:
+            layer = entities
 
-        self.__entity_span_indexers[name] = EntitySpanIndexer(entities=entities)
-        self.__entity_box_indexers[name] = EntityBoxIndexer(entities=entities)
-        setattr(self, name, entities)
+        layer.doc = self
+        layer.name = name
+        setattr(self, name, layer)
+        self._layers.append(name)
 
     def remove_layer(self, name: str):
-        for entity in self.get_layer(name=name):
-            entity.doc = None
-
-        delattr(self, name)
-        del self.__entity_span_indexers[name]
-        del self.__entity_box_indexers[name]
+        if name not in self.layers:
+            pass
+        else:
+            getattr(self, name).doc = None
+            getattr(self, name).name = None
+            delattr(self, name)
+            self._layers.remove(name)
 
     def get_relation(self, name: str) -> List["Relation"]:
         raise NotImplementedError
@@ -163,7 +148,7 @@ class Document:
     def remove_images(self) -> None:
         raise NotImplementedError
 
-    def to_json(self, field_names: Optional[List[str]] = None, with_images: bool = False) -> Dict:
+    def to_json(self, layers: Optional[List[str]] = None, with_images: bool = False) -> Dict:
         """Returns a dictionary that's suitable for serialization
 
         Use `fields` to specify a subset of groups in the Document to include (e.g. 'sentences')
@@ -184,10 +169,10 @@ class Document:
             RelationsFieldName: {},
         }
 
-        # 2) serialize each field to JSON
-        field_names = list(self.__entity_span_indexers.keys()) if field_names is None else field_names
-        for field_name in field_names:
-            doc_dict[EntitiesFieldName][field_name] = [entity.to_json() for entity in getattr(self, field_name)]
+        # 2) serialize each layer to JSON
+        layers = self._layers if layers is None else layers
+        for layer in layers:
+            doc_dict[EntitiesFieldName][layer] = [entity.to_json() for entity in getattr(self, layer)]
 
         # 3) serialize images if `with_images == True`
         if with_images:
@@ -207,3 +192,18 @@ class Document:
             doc.annotate_layer(name=field_name, entities=entities)
 
         return doc
+
+    def __repr__(self):
+        return f"Document with {len(self.layers)} layers: {self.layers}"
+
+    def find(self, query: Union[Span, Box], name: str) -> List[Entity]:
+        """Finds all entities that intersect with the query"""
+        return self.get_layer(name=name).find(query=query)
+
+    def intersect_by_span(self, query: Entity, name: str) -> List[Entity]:
+        """Finds all entities that intersect with the query"""
+        return self.get_layer(name=name).intersect_by_span(query=query)
+
+    def intersect_by_box(self, query: Entity, name: str) -> List[Entity]:
+        """Finds all entities that intersect with the query"""
+        return self.get_layer(name=name).intersect_by_box(query=query)

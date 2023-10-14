@@ -56,7 +56,7 @@ class TestEntitySpanIndexer(unittest.TestCase):
         ]
 
         for i, entity in enumerate(entities_to_index):
-            entity.doc = Document(symbols="test")
+            entity.layer = Document(symbols="test")
             entity.id = i
 
         index = EntitySpanIndexer(entities_to_index)

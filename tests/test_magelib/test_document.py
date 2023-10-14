@@ -10,6 +10,7 @@ from papermage.magelib import (
     Document,
     EntitiesFieldName,
     Entity,
+    Layer,
     MetadataFieldName,
     RelationsFieldName,
     SymbolsFieldName,
@@ -44,7 +45,7 @@ class TestDocument(unittest.TestCase):
     def test_empty_annotations_work(self):
         doc = Document("This is a test document!")
         doc.annotate_layer(name="my_cool_field", entities=[])
-        self.assertEqual(doc.my_cool_field, [])
+        self.assertEqual(doc.my_cool_field, Layer(entities=[]))
 
     def test_metadata_serializes(self):
         symbols = "Hey there y'all!"
@@ -124,30 +125,30 @@ class TestDocument(unittest.TestCase):
         self.assertListEqual(doc.tokens[5].chunks, [chunks[2]])
 
         # find by span works fine
-        self.assertListEqual(doc.chunks[0].tokens, doc.intersect_by_span(query=doc.chunks[0], field_name="tokens"))
-        self.assertListEqual(doc.chunks[1].tokens, doc.intersect_by_span(query=doc.chunks[1], field_name="tokens"))
-        self.assertListEqual(doc.chunks[2].tokens, doc.intersect_by_span(query=doc.chunks[2], field_name="tokens"))
+        self.assertListEqual(doc.chunks[0].tokens, doc.intersect_by_span(query=doc.chunks[0], name="tokens"))
+        self.assertListEqual(doc.chunks[1].tokens, doc.intersect_by_span(query=doc.chunks[1], name="tokens"))
+        self.assertListEqual(doc.chunks[2].tokens, doc.intersect_by_span(query=doc.chunks[2], name="tokens"))
 
         # backwards
-        self.assertListEqual(doc.tokens[0].chunks, doc.intersect_by_span(query=doc.tokens[0], field_name="chunks"))
-        self.assertListEqual(doc.tokens[1].chunks, doc.intersect_by_span(query=doc.tokens[1], field_name="chunks"))
-        self.assertListEqual(doc.tokens[2].chunks, doc.intersect_by_span(query=doc.tokens[2], field_name="chunks"))
-        self.assertListEqual(doc.tokens[3].chunks, doc.intersect_by_span(query=doc.tokens[3], field_name="chunks"))
-        self.assertListEqual(doc.tokens[4].chunks, doc.intersect_by_span(query=doc.tokens[4], field_name="chunks"))
-        self.assertListEqual(doc.tokens[5].chunks, doc.intersect_by_span(query=doc.tokens[5], field_name="chunks"))
+        self.assertListEqual(doc.tokens[0].chunks, doc.intersect_by_span(query=doc.tokens[0], name="chunks"))
+        self.assertListEqual(doc.tokens[1].chunks, doc.intersect_by_span(query=doc.tokens[1], name="chunks"))
+        self.assertListEqual(doc.tokens[2].chunks, doc.intersect_by_span(query=doc.tokens[2], name="chunks"))
+        self.assertListEqual(doc.tokens[3].chunks, doc.intersect_by_span(query=doc.tokens[3], name="chunks"))
+        self.assertListEqual(doc.tokens[4].chunks, doc.intersect_by_span(query=doc.tokens[4], name="chunks"))
+        self.assertListEqual(doc.tokens[5].chunks, doc.intersect_by_span(query=doc.tokens[5], name="chunks"))
 
         # find by box
-        self.assertListEqual(doc.intersect_by_box(query=doc.chunks[0], field_name="tokens"), doc.tokens[0:3])
-        self.assertListEqual(doc.intersect_by_box(query=doc.chunks[1], field_name="tokens"), doc.tokens[3:6])
-        self.assertListEqual(doc.intersect_by_box(query=doc.chunks[2], field_name="tokens"), [])
+        self.assertListEqual(doc.intersect_by_box(query=doc.chunks[0], name="tokens"), doc.tokens[0:3])
+        self.assertListEqual(doc.intersect_by_box(query=doc.chunks[1], name="tokens"), doc.tokens[3:6])
+        self.assertListEqual(doc.intersect_by_box(query=doc.chunks[2], name="tokens"), [])
 
         # backwards
-        self.assertListEqual(doc.intersect_by_box(query=doc.tokens[0], field_name="chunks"), [chunks[0]])
-        self.assertListEqual(doc.intersect_by_box(query=doc.tokens[1], field_name="chunks"), [chunks[0]])
-        self.assertListEqual(doc.intersect_by_box(query=doc.tokens[2], field_name="chunks"), [chunks[0]])
-        self.assertListEqual(doc.intersect_by_box(query=doc.tokens[3], field_name="chunks"), [chunks[1]])
-        self.assertListEqual(doc.intersect_by_box(query=doc.tokens[4], field_name="chunks"), [chunks[1]])
-        self.assertListEqual(doc.intersect_by_box(query=doc.tokens[5], field_name="chunks"), [chunks[1]])
+        self.assertListEqual(doc.intersect_by_box(query=doc.tokens[0], name="chunks"), [chunks[0]])
+        self.assertListEqual(doc.intersect_by_box(query=doc.tokens[1], name="chunks"), [chunks[0]])
+        self.assertListEqual(doc.intersect_by_box(query=doc.tokens[2], name="chunks"), [chunks[0]])
+        self.assertListEqual(doc.intersect_by_box(query=doc.tokens[3], name="chunks"), [chunks[1]])
+        self.assertListEqual(doc.intersect_by_box(query=doc.tokens[4], name="chunks"), [chunks[1]])
+        self.assertListEqual(doc.intersect_by_box(query=doc.tokens[5], name="chunks"), [chunks[1]])
 
     def test_cross_referencing_with_missing_entity_fields(self):
         """What happens when annotate a Doc with entiites missing spans or boxes?
@@ -169,18 +170,18 @@ class TestDocument(unittest.TestCase):
         ]
         doc.annotate_layer(name="tokens", entities=tokens)
         doc.annotate_layer(name="chunks", entities=chunks)
-        self.assertListEqual(doc.intersect_by_box(query=doc.chunks[0], field_name="tokens"), [])
-        self.assertListEqual(doc.intersect_by_box(query=doc.chunks[1], field_name="tokens"), [])
-        self.assertListEqual(doc.intersect_by_box(query=doc.chunks[2], field_name="tokens"), [])
-        self.assertListEqual(doc.intersect_by_span(query=doc.chunks[0], field_name="tokens"), [])
-        self.assertListEqual(doc.intersect_by_span(query=doc.chunks[1], field_name="tokens"), [])
-        self.assertListEqual(doc.intersect_by_span(query=doc.chunks[2], field_name="tokens"), [])
-        self.assertListEqual(doc.intersect_by_box(query=doc.tokens[0], field_name="chunks"), [])
-        self.assertListEqual(doc.intersect_by_box(query=doc.tokens[1], field_name="chunks"), [])
-        self.assertListEqual(doc.intersect_by_box(query=doc.tokens[2], field_name="chunks"), [])
-        self.assertListEqual(doc.intersect_by_span(query=doc.tokens[0], field_name="chunks"), [])
-        self.assertListEqual(doc.intersect_by_span(query=doc.tokens[1], field_name="chunks"), [])
-        self.assertListEqual(doc.intersect_by_span(query=doc.tokens[2], field_name="chunks"), [])
+        self.assertListEqual(doc.intersect_by_box(query=doc.chunks[0], name="tokens"), [])
+        self.assertListEqual(doc.intersect_by_box(query=doc.chunks[1], name="tokens"), [])
+        self.assertListEqual(doc.intersect_by_box(query=doc.chunks[2], name="tokens"), [])
+        self.assertListEqual(doc.intersect_by_span(query=doc.chunks[0], name="tokens"), [])
+        self.assertListEqual(doc.intersect_by_span(query=doc.chunks[1], name="tokens"), [])
+        self.assertListEqual(doc.intersect_by_span(query=doc.chunks[2], name="tokens"), [])
+        self.assertListEqual(doc.intersect_by_box(query=doc.tokens[0], name="chunks"), [])
+        self.assertListEqual(doc.intersect_by_box(query=doc.tokens[1], name="chunks"), [])
+        self.assertListEqual(doc.intersect_by_box(query=doc.tokens[2], name="chunks"), [])
+        self.assertListEqual(doc.intersect_by_span(query=doc.tokens[0], name="chunks"), [])
+        self.assertListEqual(doc.intersect_by_span(query=doc.tokens[1], name="chunks"), [])
+        self.assertListEqual(doc.intersect_by_span(query=doc.tokens[2], name="chunks"), [])
 
     def test_query(self):
         doc = Document("This is a test document!")
@@ -202,18 +203,18 @@ class TestDocument(unittest.TestCase):
 
         # test query by span
         self.assertListEqual(
-            doc.intersect_by_span(query=doc.chunks[0], field_name="tokens"),
-            doc.find(query=doc.chunks[0].spans[0], field_name="tokens"),
+            doc.intersect_by_span(query=doc.chunks[0], name="tokens"),
+            doc.find(query=doc.chunks[0].spans[0], name="tokens"),
         )
         # test query by box
         self.assertListEqual(
-            doc.intersect_by_box(query=doc.chunks[0], field_name="tokens"),
-            doc.find(query=doc.chunks[0].boxes[0], field_name="tokens"),
+            doc.intersect_by_box(query=doc.chunks[0], name="tokens"),
+            doc.find(query=doc.chunks[0].boxes[0], name="tokens"),
         )
         # calling wrong method w input type should fail
         with self.assertRaises(TypeError):
-            doc.intersect_by_box(query=doc.chunks[0].spans[0], field_name="tokens")
+            doc.intersect_by_box(query=doc.chunks[0].spans[0], name="tokens")
         with self.assertRaises(TypeError):
-            doc.intersect_by_span(query=doc.chunks[0].boxes[0], field_name="tokens")
+            doc.intersect_by_span(query=doc.chunks[0].boxes[0], name="tokens")
         with self.assertRaises(TypeError):
-            doc.find(query=doc.chunks[0], field_name="tokens")
+            doc.find(query=doc.chunks[0], name="tokens")

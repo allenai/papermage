@@ -135,7 +135,7 @@ class CoreRecipe(Recipe):
         for entity in vila_entities:
             entity.boxes = [
                 Box.create_enclosing_box(
-                    [b for t in doc.intersect_by_span(entity, field_name=TokensFieldName) for b in t.boxes]
+                    [b for t in doc.intersect_by_span(entity, name=TokensFieldName) for b in t.boxes]
                 )
             ]
             entity.text = make_text(entity=entity, document=doc)
