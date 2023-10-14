@@ -113,7 +113,7 @@ class LPPredictor(BasePredictor):
         """
         document_prediction = []
 
-        images = doc.get_entity(field_name=ImagesFieldName)
+        images = doc.get_layer(name=ImagesFieldName)
         for image_index, image in enumerate(tqdm(images)):
             model_outputs = self.model.detect(image.pilimage)
             document_prediction.extend(self.postprocess(model_outputs, image_index, image))

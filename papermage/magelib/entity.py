@@ -1,6 +1,6 @@
 """
 
-An annotated "unit" on a Document.
+An annotated "unit" in a Layer.
 
 """
 
@@ -12,11 +12,12 @@ from .metadata import Metadata
 from .span import Span
 
 if TYPE_CHECKING:
-    from .document import Document
+    from .document import TokensFieldName
+    from .layer import Layer
 
 
 class Entity:
-    __slots__ = ["spans", "boxes", "images", "metadata", "_id", "_doc"]
+    __slots__ = ["spans", "boxes", "images", "metadata", "_id", "_layer"]
 
     def __init__(
         self,
@@ -27,15 +28,18 @@ class Entity:
     ):
         if not spans and not boxes:
             raise ValueError(f"At least one of `spans` or `boxes` must be set.")
-        self.spans = spans if spans else []
-        self.boxes = boxes if boxes else []
-        self.images = images if images else []
+        self.spans = spans if spans is not None else []
+        self.boxes = boxes if boxes is not None else []
+        self.images = images if images is not None else []
         self.metadata = metadata if metadata else Metadata()
+        # TODO: it's confusing that `id` is both reading order as well as direct reference
+        # TODO: maybe Layer() should house reading order, and Entity() should have a unique ID
+        # TODO: hashing would be interesting, but Metadata() is allowed to mutate so that's a problem
         self._id = None
-        self._doc = None
+        self._layer = None
 
     def __repr__(self):
-        if self.doc:
+        if self.layer:
             return f"Annotated Entity:\tID: {self.id}\tSpans: {True if self.spans else False}\tBoxes: {True if self.boxes else False}\tText: {self.text}"
         return f"Unannotated Entity: {self.to_json()}"
 
@@ -57,20 +61,20 @@ class Entity:
         )
 
     @property
-    def doc(self) -> Optional["Document"]:
-        return self._doc
+    def layer(self) -> Optional["Layer"]:
+        return self._layer
 
-    @doc.setter
-    def doc(self, doc: Optional["Document"]) -> None:
-        """This method attaches a Document to this Entity, allowing the Entity
-        to access things beyond itself within the Document (e.g. neighboring entities)"""
-        if self.doc and doc:
+    @layer.setter
+    def layer(self, layer: Optional["Layer"]) -> None:
+        """This method attaches a Layer to this Entity, allowing the Entity
+        to access things beyond itself within the Layer (e.g. neighboring Entities)"""
+        if self.layer and layer:
             raise AttributeError(
-                "Already has an attached Document. Since Entity should be"
-                "specific to a given Document, we recommend creating a new"
-                "Entity from scratch and then attaching your Document."
+                "Already has an attached Layer. Since Entity should correspond"
+                "to only a specific Layer, we recommend creating a new"
+                "Entity from scratch and then attaching your Layer."
             )
-        self._doc = doc
+        self._layer = layer
 
     @property
     def id(self) -> Optional[int]:
@@ -83,17 +87,39 @@ class Entity:
         position within the broader Document."""
         if self.id:
             raise AttributeError(f"This Entity already has an ID: {self.id}")
-        if not self.doc:
+        if not self.layer:
             raise AttributeError("This Entity is missing a Document")
         self._id = id
 
-    def __getattr__(self, field: str) -> List["Entity"]:
+    def __getattr__(self, name: str) -> List["Entity"]:
         """This Overloading is convenient syntax since the `entity.layer` operation is intuitive for folks."""
         try:
-            return self.find_by_span(field=field)
+            return self.intersect_by_span(name=name)
         except ValueError:
             # maybe users just want some attribute of the Entity object
-            return self.__getattribute__(field)
+            return self.__getattribute__(name)
+
+    def intersect_by_span(self, name: str) -> List["Entity"]:
+        """This method allows you to access overlapping Entities
+        within the Document based on Span"""
+        if self.layer is None:
+            raise ValueError("This Entity is not attached to a Layer")
+
+        if self.layer.doc is None:
+            raise ValueError("This Entity's Layer is not attached to a Document")
+
+        return self.layer.doc.intersect_by_span(query=self, name=name)
+
+    def intersect_by_box(self, name: str) -> List["Entity"]:
+        """This method allows you to access overlapping Entities
+        within the Document based on Box"""
+        if self.layer is None:
+            raise ValueError("This Entity is not attached to a Layer")
+
+        if self.layer.doc is None:
+            raise ValueError("This Entity's Layer is not attached to a Document")
+
+        return self.layer.doc.intersect_by_box(query=self, name=name)
 
     @property
     def start(self) -> Union[int, float]:
@@ -105,18 +131,30 @@ class Entity:
 
     @property
     def symbols_from_spans(self) -> List[str]:
-        if self.doc is not None:
-            return [self.doc.symbols[span.start : span.end] for span in self.spans]
-        else:
-            return []
+        if self.layer is None:
+            raise ValueError("This Entity is not attached to a Layer")
+
+        if self.layer.doc is None:
+            raise ValueError("This Entity's Layer is not attached to a Document")
+
+        if self.layer.doc.symbols is None:
+            raise ValueError("This Entity's Document is missing symbols")
+
+        return [self.layer.doc.symbols[span.start : span.end] for span in self.spans]
 
     @property
     def symbols_from_boxes(self) -> List[str]:
-        if self.doc is not None:
-            matched_tokens = self.doc.find_by_box(query=self, field_name="tokens")
-            return [self.doc.symbols[span.start : span.end] for t in matched_tokens for span in t.spans]
-        else:
-            return []
+        if self.layer is None:
+            raise ValueError("This Entity is not attached to a Layer")
+
+        if self.layer.doc is None:
+            raise ValueError("This Entity's Layer is not attached to a Document")
+
+        if self.layer.doc.symbols is None:
+            raise ValueError("This Entity's Document is missing symbols")
+
+        matched_tokens = self.intersect_by_box(name=TokensFieldName)
+        return [self.layer.doc.symbols[span.start : span.end] for t in matched_tokens for span in t.spans]
 
     @property
     def text(self) -> str:
@@ -145,26 +183,3 @@ class Entity:
             return self.id < other.id
         else:
             return self.start < other.start
-
-    def find_by_span(self, field: str) -> List["Entity"]:
-        """This method allows you to access overlapping Entities
-        within the Document based on Span"""
-        if self.doc is None:
-            raise ValueError("This entity is not attached to a document")
-
-        if field in self.doc.fields:
-            return self.doc.find_by_span(self, field)
-        else:
-            raise ValueError(f"Field {field} not found in Document")
-
-    def find_by_box(self, field: str) -> List["Entity"]:
-        """This method allows you to access overlapping Entities
-        within the Document based on Box"""
-
-        if self.doc is None:
-            raise ValueError("This entity is not attached to a document")
-
-        if field in self.doc.fields:
-            return self.doc.find_by_box(self, field)
-        else:
-            raise ValueError(f"Field {field} not found in Document")

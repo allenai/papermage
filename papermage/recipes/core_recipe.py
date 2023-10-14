@@ -116,26 +116,26 @@ class CoreRecipe(Recipe):
     def from_doc(self, doc: Document) -> Document:
         self.logger.info("Predicting words...")
         words = self.word_predictor.predict(doc=doc)
-        doc.annotate_entity(field_name=WordsFieldName, entities=words)
+        doc.annotate_layer(name=WordsFieldName, entities=words)
 
         self.logger.info("Predicting sentences...")
         sentences = self.sent_predictor.predict(doc=doc)
-        doc.annotate_entity(field_name=SentencesFieldName, entities=sentences)
+        doc.annotate_layer(name=SentencesFieldName, entities=sentences)
 
         self.logger.info("Predicting blocks...")
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             blocks = self.publaynet_block_predictor.predict(doc=doc)
-        doc.annotate_entity(field_name=BlocksFieldName, entities=blocks)
+        doc.annotate_layer(name=BlocksFieldName, entities=blocks)
 
         self.logger.info("Predicting vila...")
         vila_entities = self.ivila_predictor.predict(doc=doc)
-        doc.annotate_entity(field_name="vila_entities", entities=vila_entities)
+        doc.annotate_layer(name="vila_entities", entities=vila_entities)
 
         for entity in vila_entities:
             entity.boxes = [
                 Box.create_enclosing_box(
-                    [b for t in doc.find_by_span(entity, field_name=TokensFieldName) for b in t.boxes]
+                    [b for t in doc.intersect_by_span(entity, name=TokensFieldName) for b in t.boxes]
                 )
             ]
             entity.text = make_text(entity=entity, document=doc)

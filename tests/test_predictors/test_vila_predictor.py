@@ -74,7 +74,7 @@ class TestFigureVilaPredictors(unittest.TestCase):
         doc.annotate_images(images)
 
         layout_regions = layout_predictor.predict(doc)
-        doc.annotate_entity(field_name="blocks", entities=layout_regions)
+        doc.annotate_layer(name="blocks", entities=layout_regions)
 
         predictor_with_blocks = IVILATokenClassificationPredictor.from_pretrained(
             "allenai/ivila-block-layoutlm-finetuned-docbank"

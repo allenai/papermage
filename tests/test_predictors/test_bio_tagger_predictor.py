@@ -31,7 +31,7 @@ class TestBioTaggerPredictor(unittest.TestCase):
         self.doc = Document.from_json(doc_json=test_doc_json)
         ent1 = Entity(spans=[Span(start=86, end=456)])
         ent2 = Entity(spans=[Span(start=457, end=641)])
-        self.doc.annotate_entity(field_name="bibs", entities=[ent1, ent2])
+        self.doc.annotate_layer(name="bibs", entities=[ent1, ent2])
 
         # setup predictor
         self.id2label = {0: "O", 1: "B_Label", 2: "I_Label"}
@@ -53,9 +53,9 @@ class TestBioTaggerPredictor(unittest.TestCase):
             Entity(spans=[Span(start=15, end=23)]),
             Entity(spans=[Span(start=23, end=24)]),
         ]
-        doc.annotate_entity(field_name="tokens", entities=tokens)
+        doc.annotate_layer(name="tokens", entities=tokens)
         sents = [Entity(spans=[Span(start=0, end=24)])]
-        doc.annotate_entity(field_name="sents", entities=sents)
+        doc.annotate_layer(name="sents", entities=sents)
 
         batches = self.predictor.preprocess(doc=doc, context_name="sents")
         self.assertIsInstance(batches[0], BIOBatch)
@@ -72,7 +72,7 @@ class TestBioTaggerPredictor(unittest.TestCase):
         token_tags = predictor.predict(doc=self.doc)
         assert len(token_tags) == 340
 
-        self.doc.annotate_entity(field_name="token_tags", entities=token_tags)
+        self.doc.annotate_layer(name="token_tags", entities=token_tags)
         for token_tag in token_tags:
             assert isinstance(token_tag.metadata.label, str)
             assert isinstance(token_tag.metadata.score, float)
@@ -107,7 +107,7 @@ class TestBioTaggerPredictor(unittest.TestCase):
         token_tags = predictor.predict(doc=self.doc)
         assert len(token_tags) == 924
 
-        self.doc.annotate_entity(field_name="token_tags", entities=token_tags)
+        self.doc.annotate_layer(name="token_tags", entities=token_tags)
         for token_tag in token_tags:
             assert isinstance(token_tag.metadata.label, str)
             assert isinstance(token_tag.metadata.score, float)

@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 def make_text(entity: Entity, document: Document, field: str = WordsFieldName) -> str:
-    candidate_words = document.find_by_span(entity, field)
+    candidate_words = document.intersect_by_span(entity, field)
     candidate_text: List[str] = []
 
     for i in range(len(candidate_words)):
@@ -320,7 +320,7 @@ class SVMWordPredictor(BasePredictor):
                 new_token = Entity(spans=[Span(start=span.start, end=span.end) for span in token.spans])
                 new_tokens.append(new_token)
         new_doc = Document(symbols=doc.symbols)
-        new_doc.annotate_entity(field_name="tokens", entities=new_tokens)
+        new_doc.annotate_layer(name="tokens", entities=new_tokens)
         return new_doc
 
     def _recursively_remove_trailing_hyphens(self, word: str) -> str:
@@ -364,7 +364,7 @@ class SVMWordPredictor(BasePredictor):
         adjacent tokens belong in a word together.
         """
         _ws_tokens: List[Entity] = self.whitespace_predictor.predict(doc=doc)
-        doc.annotate_entity(field_name="_ws_tokens", entities=_ws_tokens)
+        doc.annotate_layer(name="_ws_tokens", entities=_ws_tokens)
 
         # token -> ws_tokens
         token_id_to_ws_token_id = {}
@@ -384,7 +384,7 @@ class SVMWordPredictor(BasePredictor):
             clusters.append(sorted(tokens))
 
         # cleanup
-        doc.remove_entity(field_name="_ws_tokens")
+        doc.remove_layer(name="_ws_tokens")
         return clusters
 
     def _predict_with_whitespace(self, doc: Document):

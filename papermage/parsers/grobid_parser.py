@@ -119,7 +119,7 @@ class GrobidFullParser(Parser):
     ) -> Document:
         assert doc.symbols != ""
         for field in REQUIRED_DOCUMENT_FIELDS:
-            assert field in doc.fields
+            assert field in doc.layers
 
         (_, _, xml) = self.client.process_pdf(
             service="processFulltextDocument",
@@ -149,11 +149,11 @@ class GrobidFullParser(Parser):
 
         # add vila-like entities
         vila_entities = self._make_vila_groups(doc)
-        doc.annotate_entity(entities=vila_entities, field_name="vila_entities")
+        doc.annotate_layer(entities=vila_entities, name="vila_entities")
         return doc
 
     def _make_spans_from_boxes(self, doc: Document, entity: Entity) -> List[Span]:
-        tokens = [cast(Entity, t) for match in doc.find_by_box(entity, "tokens") for t in match.tokens]
+        tokens = [cast(Entity, t) for match in doc.intersect_by_box(entity, "tokens") for t in match.tokens]
         results = cluster_and_merge_neighbor_spans(
             spans=sorted(set(s for t in tokens for s in t.spans), key=lambda x: x.start)
         )
@@ -240,12 +240,12 @@ class GrobidFullParser(Parser):
             for fig in figs:
                 current_boxes = [Box(l=b.l, t=b.t, w=b.w, h=b.h, page=b.page) for b in fig.boxes]
 
-                if "figDesc" in doc.fields:
-                    caption_boxes = [b for d in doc.find_by_box(fig, "figDesc") for b in d.boxes]
+                if "figDesc" in doc.layers:
+                    caption_boxes = [b for d in doc.intersect_by_box(fig, "figDesc") for b in d.boxes]
                     current_boxes = [b for b in current_boxes if b not in caption_boxes]
 
-                if "table" in doc.fields:
-                    table_boxes = [b for d in doc.find_by_box(fig, "table") for b in d.boxes]
+                if "table" in doc.layers:
+                    table_boxes = [b for d in doc.intersect_by_box(fig, "table") for b in d.boxes]
                     current_boxes = [b for b in current_boxes if b not in table_boxes]
 
                 if not current_boxes:
@@ -291,7 +291,7 @@ class GrobidFullParser(Parser):
 
         all_box_groups = self._get_box_groups(xml_root)
         for field, box_groups in all_box_groups.items():
-            doc.annotate_entity(field_name=field, entities=box_groups)
+            doc.annotate_layer(name=field, entities=box_groups)
 
         return doc
 

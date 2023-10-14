@@ -36,8 +36,8 @@ class APISpanQAPredictor(BasePredictor):
         paper_context = PaperContext.parse_raw(
             json.dumps(
                 {
-                    "title": getattr(doc, "title") if "title" in doc.fields else "",
-                    "abstract": getattr(doc, "abstract") if "abstract" in doc.fields else "",
+                    "title": getattr(doc, "title") if "title" in doc.layers else "",
+                    "abstract": getattr(doc, "abstract") if "abstract" in doc.layers else "",
                     "full_text": [
                         {
                             "section_name": "",
@@ -53,7 +53,7 @@ class APISpanQAPredictor(BasePredictor):
         if context.id is not None:
             context_index = context.id
         else:
-            context_index = [i for i, c in enumerate(doc.get_entity(self.context_unit_name)) if c == context][0]
+            context_index = [i for i, c in enumerate(doc.get_layer(self.context_unit_name)) if c == context][0]
 
         paper_snippet = PaperSnippet(
             snippet=getattr(doc, self.span_name)[0].text,
@@ -97,7 +97,7 @@ class APISpanQAPredictor(BasePredictor):
 
         # add the evidence entities
         for evidence in paper_snippet.qae[0].evidence:
-            entity = doc.get_entity(self.context_unit_name)[evidence.index]
+            entity = doc.get_layer(self.context_unit_name)[evidence.index]
             new_entity = Entity.from_json(entity.to_json())
             new_entity.metadata["type"] = "evidence"
             entities.append(new_entity)
