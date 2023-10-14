@@ -16,9 +16,7 @@ class Layer:
     """A fancy list of Entities. Manages <list> things like indexing and slicing,
     but also gives access to things like reading order and other metadata."""
 
-    __slots__ = [
-        "entities",
-    ]
+    __slots__ = ["entities", "metadata"]
 
     def __init__(self, entities: List[Entity], metadata: Optional[Metadata] = None):
         self.entities = entities

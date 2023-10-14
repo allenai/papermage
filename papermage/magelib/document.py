@@ -63,7 +63,7 @@ class Document:
     paragraphs: Layer
     pages: Layer
 
-    SPECIAL_FIELDS = [SymbolsFieldName, ImagesFieldName, MetadataFieldName, EntitiesFieldName, RelationsFieldName]
+    SPECIAL_FIELDS = [SymbolsFieldName, ImagesFieldName, MetadataFieldName]
 
     def __init__(
         self,
@@ -81,7 +81,7 @@ class Document:
 
     @property
     def layers(self) -> List[str]:
-        return list(self.__entity_span_indexers.keys())
+        return self.SPECIAL_FIELDS + list(self.__entity_span_indexers.keys())
 
     def find(self, query: Union[Span, Box], field_name: str) -> List[Entity]:
         if isinstance(query, Span):
