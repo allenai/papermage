@@ -34,9 +34,9 @@ class Rasterizer(Protocol):
     @classmethod
     def attach_images(cls, images: List[Image], doc: Document) -> None:
         """Assumes doc already has `pages` annotated."""
-        if PagesFieldName not in doc.fields:
+        if PagesFieldName not in doc.layers:
             raise ValueError(f"Failed to attach. Document is missing `pages`.")
-        pages = doc.get_entity(field_name=PagesFieldName)
+        pages = doc.get_layer(name=PagesFieldName)
         if len(images) != len(pages):
             raise ValueError(f"Failed to attach. {len(images)} `images` != {len(pages)} pages in `doc`.")
         for page, image in zip(pages, images):

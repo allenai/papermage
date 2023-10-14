@@ -23,7 +23,7 @@ class TestSpanQAPredictor(unittest.TestCase):
         user_selected_span = Entity(
             spans=[Span(start=2784, end=2803)], metadata=Metadata(question="What does this mean?")
         )
-        self.doc.annotate_entity(field_name="user_selected_span", entities=[user_selected_span])
+        self.doc.annotate_layer(name="user_selected_span", entities=[user_selected_span])
 
         self.span_qa_predictor = APISpanQAPredictor(
             context_unit_name="rows",
@@ -70,14 +70,14 @@ class TestSpanQAPredictor(unittest.TestCase):
         )
         assert annotations[0].metadata["question"] == "What does this mean?"
 
-        self.doc.annotate_entity(field_name="context_with_span", entities=[annotations[1]])
+        self.doc.annotate_layer(name="context_with_span", entities=[annotations[1]])
         assert annotations[1].metadata["type"] == "context_with_span"
         assert (
             annotations[1].text
             == "1 In the remainder of this work, unless otherwise specified, AI-assisted writing refers to the use of LLMs to support writing."
         )
 
-        self.doc.annotate_entity(field_name="evidence", entities=annotations[2:5])
+        self.doc.annotate_layer(name="evidence", entities=annotations[2:5])
         assert annotations[2].metadata["type"] == "evidence"
         assert annotations[2].text == "knowledge or information. For example, this could be researchers"
 

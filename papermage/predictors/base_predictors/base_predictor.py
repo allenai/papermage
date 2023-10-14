@@ -28,7 +28,7 @@ class BasePredictor:
         if self.REQUIRED_DOCUMENT_FIELDS is not None:
             for field in self.REQUIRED_DOCUMENT_FIELDS:
                 assert (
-                    field in doc.fields
+                    field in doc.layers
                 ), f"The input Document object {doc} doesn't contain the required field {field}"
 
     def predict(self, doc: Document) -> List[Entity]:

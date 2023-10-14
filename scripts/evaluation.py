@@ -68,7 +68,7 @@ def patch_grobid_client_process_pdf():
 
 def run_vila(doc: Document, vila_predictor: BasePredictor) -> Document:
     entities = vila_predictor.predict(doc=doc)
-    doc.annotate_entity(entities=entities, field_name="vila_entities")
+    doc.annotate_layer(entities=entities, name="vila_entities")
     return doc
 
 

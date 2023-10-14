@@ -31,7 +31,7 @@ class TestEntityClassificationPredictorTrainer(unittest.TestCase):
         self.doc = Document.from_json(doc_json=test_doc_json)
         ent1 = Entity(spans=[Span(start=86, end=456)])
         ent2 = Entity(spans=[Span(start=457, end=641)])
-        self.doc.annotate_entity(field_name="bibs", entities=[ent1, ent2])
+        self.doc.annotate_layer(name="bibs", entities=[ent1, ent2])
 
         self.predictor = HFBIOTaggerPredictor.from_pretrained(
             model_name_or_path=TEST_SCIBERT_WEIGHTS,

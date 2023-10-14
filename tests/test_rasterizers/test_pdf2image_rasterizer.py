@@ -30,6 +30,6 @@ class TestPDF2ImageRasterizer(unittest.TestCase):
         image = Image.create_rgb_random()
         doc = Document(symbols="This is a doc.")
         page = Entity(spans=[Span(start=0, end=14)])
-        doc.annotate_entity(field_name="pages", entities=[page])
+        doc.annotate_layer(name="pages", entities=[page])
         rasterizer.attach_images(images=[image], doc=doc)
         assert doc.pages[0].images[0] == image

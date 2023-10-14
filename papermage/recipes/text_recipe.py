@@ -28,9 +28,9 @@ class TextRecipe(Recipe):
     def from_doc(self, doc: Document) -> Document:
         self.logger.info("Predicting tokens...")
         tokens = self.tokenizer_predictor.predict(doc=doc)
-        doc.annotate_entity(field_name=TokensFieldName, entities=tokens)
+        doc.annotate_layer(name=TokensFieldName, entities=tokens)
 
         self.logger.info("Predicting sentences...")
         sentences = self.sent_predictor.predict(doc=doc)
-        doc.annotate_entity(field_name=SentencesFieldName, entities=sentences)
+        doc.annotate_layer(name=SentencesFieldName, entities=sentences)
         return doc

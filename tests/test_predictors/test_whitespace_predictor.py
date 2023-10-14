@@ -41,12 +41,12 @@ class TestWhitespacePredictor(unittest.TestCase):
         ]
 
         doc = Document(symbols=symbols)
-        doc.annotate_entity(field_name="tokens", entities=[Entity(spans=[span]) for i, span in enumerate(spans)])
+        doc.annotate_layer(name="tokens", entities=[Entity(spans=[span]) for i, span in enumerate(spans)])
 
         predictor = HFWhitspaceTokenPredictor()
         ws_chunks = predictor.predict(doc)
 
-        doc.annotate_entity(field_name="ws_chunks", entities=ws_chunks)
+        doc.annotate_layer(name="ws_chunks", entities=ws_chunks)
         self.assertEqual(
             [c.text for c in doc.ws_chunks],
             [

@@ -102,19 +102,19 @@ class TestEntity(unittest.TestCase):
         a = Entity(spans=[Span(0, 1)])
 
         # defaults to None
-        self.assertIsNone(a.doc)
+        self.assertIsNone(a.layer)
 
         # attaches reference to the Doc object
-        a.doc = d
-        self.assertIs(a.doc, d)
+        a.layer = d
+        self.assertIs(a.layer, d)
 
         # protected setter
         with self.assertRaises(AttributeError) as e:
-            a.doc = DummyDoc()
+            a.layer = DummyDoc()
 
         # detaches from Doc
-        a.doc = None
-        self.assertIsNone(a.doc)
+        a.layer = None
+        self.assertIsNone(a.layer)
 
     def test_id(self):
         a = Entity(spans=[Span(0, 1)])
@@ -128,6 +128,6 @@ class TestEntity(unittest.TestCase):
 
         # setting id works w/ a Doc first
         d = DummyDoc()
-        a.doc = d
+        a.layer = d
         a.id = 12345
         self.assertEqual(a.id, 12345)
