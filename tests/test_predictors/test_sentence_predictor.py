@@ -42,9 +42,9 @@ class TestPysbdSentencePredictor(unittest.TestCase):
             Entity(spans=[Span(32, 36)]),
             Entity(spans=[Span(36, 37)]),
         ]
-        doc.annotate_entity(field_name="tokens", entities=tokens)
+        doc.annotate_layer(name="tokens", entities=tokens)
         sents = predictor.predict(doc)
-        doc.annotate_entity(field_name="sentences", entities=sents)
+        doc.annotate_layer(name="sentences", entities=sents)
         self.assertEqual(len(doc.sentences), 2)
         self.assertEqual(doc.sentences[0].text, "This is a test.")
         self.assertEqual(doc.sentences[1].text, "This is another test.")
@@ -52,7 +52,7 @@ class TestPysbdSentencePredictor(unittest.TestCase):
     def test_predict_paper(self):
         predictor = PysbdSentencePredictor()
         sents = predictor.predict(self.doc)
-        self.doc.annotate_entity(field_name="sentences", entities=sents)
+        self.doc.annotate_layer(name="sentences", entities=sents)
         self.assertEqual(len(self.doc.sentences), 310)
 
         valid_sent_1 = """Large language models have introduced exciting new opportunities and challenges in designing and developing new AI-assisted writing support tools."""

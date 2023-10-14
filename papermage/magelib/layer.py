@@ -6,18 +6,23 @@ Layers are collections of Entities. Supports indexing and slicing.
 
 """
 
-from typing import List
+from typing import List, Optional
 
 from .entity import Entity
+from .metadata import Metadata
 
 
 class Layer:
-    """Views into a document. Immutable. Lightweight."""
+    """A fancy list of Entities. Manages <list> things like indexing and slicing,
+    but also gives access to things like reading order and other metadata."""
 
-    __slots__ = ["entities"]
+    __slots__ = [
+        "entities",
+    ]
 
-    def __init__(self, entities: List[Entity]):
+    def __init__(self, entities: List[Entity], metadata: Optional[Metadata] = None):
         self.entities = entities
+        self.metadata = metadata if metadata else Metadata()
 
     def __repr__(self):
         entity_repr = "\n".join([f"\t{e}" for e in self.entities])

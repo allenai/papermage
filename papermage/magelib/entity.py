@@ -31,6 +31,9 @@ class Entity:
         self.boxes = boxes if boxes else []
         self.images = images if images else []
         self.metadata = metadata if metadata else Metadata()
+        # TODO: it's confusing that `id` is both reading order as well as direct reference
+        # TODO: maybe Layer() should house reading order, and Entity() should have a unique ID
+        # TODO: hashing would be interesting, but Metadata() is allowed to mutate so that's a problem
         self._id = None
         self._doc = None
 
@@ -90,7 +93,7 @@ class Entity:
     def __getattr__(self, field: str) -> List["Entity"]:
         """This Overloading is convenient syntax since the `entity.layer` operation is intuitive for folks."""
         try:
-            return self.find_by_span(field=field)
+            return self.find_by_span(layer=field)
         except ValueError:
             # maybe users just want some attribute of the Entity object
             return self.__getattribute__(field)
@@ -113,7 +116,7 @@ class Entity:
     @property
     def symbols_from_boxes(self) -> List[str]:
         if self.doc is not None:
-            matched_tokens = self.doc.find_by_box(query=self, field_name="tokens")
+            matched_tokens = self.doc.intersect_by_box(query=self, field_name="tokens")
             return [self.doc.symbols[span.start : span.end] for t in matched_tokens for span in t.spans]
         else:
             return []
@@ -146,25 +149,25 @@ class Entity:
         else:
             return self.start < other.start
 
-    def find_by_span(self, field: str) -> List["Entity"]:
+    def find_by_span(self, layer: str) -> List["Entity"]:
         """This method allows you to access overlapping Entities
         within the Document based on Span"""
         if self.doc is None:
             raise ValueError("This entity is not attached to a document")
 
-        if field in self.doc.fields:
-            return self.doc.find_by_span(self, field)
+        if layer in self.doc.layers:
+            return self.doc.intersect_by_span(self, layer)
         else:
-            raise ValueError(f"Field {field} not found in Document")
+            raise ValueError(f"Field {layer} not found in Document")
 
-    def find_by_box(self, field: str) -> List["Entity"]:
+    def find_by_box(self, layer: str) -> List["Entity"]:
         """This method allows you to access overlapping Entities
         within the Document based on Box"""
 
         if self.doc is None:
             raise ValueError("This entity is not attached to a document")
 
-        if field in self.doc.fields:
-            return self.doc.find_by_box(self, field)
+        if layer in self.doc.layers:
+            return self.doc.intersect_by_box(self, layer)
         else:
-            raise ValueError(f"Field {field} not found in Document")
+            raise ValueError(f"Field {layer} not found in Document")
