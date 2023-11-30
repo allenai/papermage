@@ -6,7 +6,7 @@ from tqdm import tqdm
 from papermage.rasterizers import PDF2ImageRasterizer
 
 pdf_paths = [
-    "tests/fixtures/81f7eb73883a559e39a5ab7754c77371488c4c7e.pdf",
+    "tests/fixtures/2302.07302v1.pdf",
     "tests/fixtures/2020.acl-main.447.pdf",
     "tests/fixtures/2023.eacl-main.121.pdf",
     "tests/fixtures/2303.14334v2.pdf",
