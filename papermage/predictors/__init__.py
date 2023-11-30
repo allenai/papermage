@@ -2,6 +2,7 @@ from papermage.predictors.base_predictors.base_predictor import BasePredictor
 from papermage.predictors.base_predictors.hf_predictors import HFBIOTaggerPredictor
 from papermage.predictors.block_predictors import LPEffDetPubLayNetBlockPredictor
 from papermage.predictors.formula_predictors import LPEffDetFormulaPredictor
+from papermage.predictors.paper_qa_predictors import PaperQaPredictor
 from papermage.predictors.sentence_predictors import PysbdSentencePredictor
 from papermage.predictors.span_qa_predictors import APISpanQAPredictor
 from papermage.predictors.token_predictors import HFWhitspaceTokenPredictor
@@ -18,4 +19,5 @@ __all__ = [
     "LPEffDetFormulaPredictor",
     "APISpanQAPredictor",
     "BasePredictor",
+    "PaperQaPredictor",
 ]
