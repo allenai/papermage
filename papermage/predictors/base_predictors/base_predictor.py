@@ -31,13 +31,13 @@ class BasePredictor:
                     field in doc.layers
                 ), f"The input Document object {doc} doesn't contain the required field {field}"
 
-    def predict(self, doc: Document) -> List[Entity]:
+    def predict(self, doc: Document, *args, **kwargs) -> List[Entity]:
         """For all the predictors, the input is a document object, and
         the output is a list of annotations.
         """
         self._doc_field_checker(doc)
-        return self._predict(doc=doc)
+        return self._predict(doc=doc, *args, **kwargs)
 
     @abstractmethod
-    def _predict(self, doc: Document) -> List[Entity]:
+    def _predict(self, doc: Document, *args, **kwargs) -> List[Entity]:
         raise NotImplementedError
