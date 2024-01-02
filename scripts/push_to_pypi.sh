@@ -34,7 +34,7 @@ if [ -f "${LOCAL_PYPIRC}" ]; then
   echo "Found .pypirc file, using it to upload to PyPi"
   python3 -m twine upload --config-file "${LOCAL_PYPIRC}" dist/*
 else
-  echo "No .pypirc file found, falling back to gloval .pypirc"
+  echo "No .pypirc file found, falling back to global .pypirc"
   python3 -m twine upload dist/*
 fi
 
