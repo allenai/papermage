@@ -5,10 +5,20 @@
 ```python
 conda create -n papermage python=3.11
 conda activate papermage
+```
+
+If you're installing from source:
+```
 pip install -e '.[dev,predictors,visualizers]'
 ```
 
+If you're installing from PyPi:
+```
+pip install 'papermage.[dev,predictors,visualizers]'
+```
+
 (you may need to add/remove quotes depending on your command line shell).
+
 
 If you're on MacOSX, you'll also want to run:
 ```
@@ -41,7 +51,7 @@ doc = recipe.run("tests/fixtures/papermage.pdf")
 
 #### 2. Understanding the output: the `Document` class
 
-What is a `Document`? At minimum, it is some text, saved under the `.symbols` field, which is just a `<str>`.  For example:
+What is a `Document`? At minimum, it is some text, saved under the `.symbols` layer, which is just a `<str>`.  For example:
 
 ```python
 > doc.symbols
@@ -73,22 +83,21 @@ Drawing inspiration from Ko
 
 This shows two nice aspects of this library:
 
-* `Document` provides iterables for different segmentations of `symbols`.  Options include things like `pages, tokens, rows, sentences, paragraphs, sections, ...`.  Not every Parser will provide every segmentation, though.
+* `Document` provides iterables for different segmentations of `symbols`.  Options include things like `pages, tokens, rows, sentences, sections, ...`.  Not every Parser will provide every segmentation, though.
 
-* Each one of these segments (in our library, we call them `Entity` objects) is aware of (and can access) other segment types. For example, you can call `page.rows` to get all Rows that intersect a particular Page. Or you can call `sent.tokens` to get all Tokens that intersect a particular Sentence. Or you can call `sent.rows` to get the Row(s) that intersect a particular Sentence. These indexes are built *dynamically* when the `Document` is created and each time a new `Entity` type is added. In the extreme, as long as those fields are available in the Document, you can write:
+* Each one of these segments (in our library, we call them `Entity` objects) is aware of (and can access) other segment types. For example, you can call `page.rows` to get all Rows that intersect a particular Page. Or you can call `sent.tokens` to get all Tokens that intersect a particular Sentence. Or you can call `sent.rows` to get the Row(s) that intersect a particular Sentence. These indexes are built *dynamically* when the `Document` is created and each time a new `Entity` type is added. In the extreme, as long as those layers are available in the Document, you can write:
 
 ```python
 for page in doc.pages:
-    for paragraph in page.paragraphs:
-        for sent in paragraph.sentences:
-            for row in sent.rows: 
-                ...
+    for sent in page.sentences:
+        for row in sent.rows: 
+            ...
 ```
 
-You can check which fields are available in a Document via:
+You can check which layers are available in a Document via:
 
 ```python
-> doc.fields
+> doc.layers
 ['tokens',
  'rows',
  'pages',
@@ -97,7 +106,6 @@ You can check which fields are available in a Document via:
  'blocks',
  'vila_entities',
  'titles',
- 'paragraphs',
  'authors',
  'abstracts',
  'keywords',
@@ -131,22 +139,7 @@ for sent in doc.sentences:
 
 Tokens that are *outside* each sentence can still be printed. This is because when we jump from a sentence to its rows, we are looking for *all* rows that have *any* overlap with the sentence. Rows can extend beyond sentence boundaries, and as such, can contain tokens outside that sentence.
 
-Here's another example:
-```python
-for page in doc.pages:
-    print([sent.text for sent in page.sentences])
-```
-
-Sentences can cross page boundaries. As such, adjacent pages may end up printing the same sentence.
-
-But rows and tokens adhere strictly to page boundaries, and thus will not repeat when printed across pages:
-```python
-for page in doc.pages:
-    print([row.text for row in page.rows])
-    print([token.text for token in page.tokens])
-``` 
-
-A key aspect of using this library is understanding how these different fields are defined & anticipating how they might interact with each other. We try to make decisions that are intuitive, but we do ask users to experiment with fields to build up familiarity.
+A key aspect of using this library is understanding how these different layers are defined & anticipating how they might interact with each other. We try to make decisions that are intuitive, but we do ask users to experiment with layers to build up familiarity.
 
 
 
@@ -166,7 +159,7 @@ Each `Entity` object stores information about its contents and position:
 
 A `Document` is created by stitching together 3 types of tools: `Parsers`, `Rasterizers` and `Predictors`.
 
-* `Parsers` take a PDF as input and return a `Document` compared of `.symbols` and other fields. The example one we use is a wrapper around [PDFPlumber](https://github.com/jsvine/pdfplumber) - MIT License utility.
+* `Parsers` take a PDF as input and return a `Document` compared of `.symbols` and other layers. The example one we use is a wrapper around [PDFPlumber](https://github.com/jsvine/pdfplumber) - MIT License utility.
 
 * `Rasterizers` take a PDF as input and return an `Image` per page that is added to `Document.images`. The example one we use is [PDF2Image](https://github.com/Belval/pdf2image) - MIT License. 
 
@@ -179,7 +172,7 @@ A `Document` is created by stitching together 3 types of tools: `Parsers`, `Rast
 ```python
 import json
 with open('filename.json', 'w') as f_out:
-    json.dump(doc.to_json(with_images=True), f_out, indent=4)
+    json.dump(doc.to_json(), f_out, indent=4)
 ```
 
 will produce something akin to:
@@ -187,7 +180,6 @@ will produce something akin to:
 {
     "symbols": "PaperMage: A Unified Toolkit for Processing, Representing, an...",
     "entities": {
-        "images": [...],
         "rows": [...],
         "tokens": [...],
         "words": [...],
@@ -197,8 +189,6 @@ will produce something akin to:
     "metadata": {...}
 }
 ```
-
-Note that `Images` are serialized to `base64` if you include `with_images` flag. Otherwise, it's left out of JSON serialization by default.
 
 
 #### 7. How can I load my `Document`?
@@ -212,7 +202,7 @@ with open('filename.json') as f_in:
 ```
 
 
-Note: A common pattern for adding fields to a document is to load in a previously saved document, run some additional `Predictors` on it, and save the result.
+Note: A common pattern for adding layers to a document is to load in a previously saved document, run some additional `Predictors` on it, and save the result.
 
 See `papermage/predictors/README.md` for more information about training custom predictors on your own data.
 
