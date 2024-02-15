@@ -1,5 +1,5 @@
 # papermage
-force CI
+
 ### Setup
 
 ```python
