@@ -100,7 +100,7 @@ class LPPredictor(BasePredictor):
             for block in model_outputs
         ]
 
-    def _predict(self, doc: Document) -> List[Entity]:
+    def _predict(self, doc: Document, *args, **kwargs) -> List[Entity]:
         """Returns a list of Entities for the detected layouts for all pages
 
         Args:
