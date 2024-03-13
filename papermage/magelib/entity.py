@@ -94,7 +94,13 @@ class Entity:
     def __getattr__(self, name: str) -> List["Entity"]:
         """This Overloading is convenient syntax since the `entity.layer` operation is intuitive for folks."""
         try:
-            return self.intersect_by_span(name=name)
+            matched_entities_by_span = self.intersect_by_span(name=name)
+            matched_entities_by_box = self.intersect_by_box(name=name)
+            deduped_matched_entities = []
+            for entity in matched_entities_by_span + matched_entities_by_box:
+                if entity not in deduped_matched_entities:
+                    deduped_matched_entities.append(entity)
+            return deduped_matched_entities
         except ValueError:
             # maybe users just want some attribute of the Entity object
             return self.__getattribute__(name)
@@ -153,7 +159,8 @@ class Entity:
         if self.layer.doc.symbols is None:
             raise ValueError("This Entity's Document is missing symbols")
 
-        matched_tokens = self.intersect_by_box(name=TokensFieldName)
+        # TODO: maybe just an import error for TokensFieldName?
+        matched_tokens = self.intersect_by_box(name="tokens")
         return [self.layer.doc.symbols[span.start : span.end] for t in matched_tokens for span in t.spans]
 
     @property
