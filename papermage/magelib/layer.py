@@ -6,6 +6,7 @@ Layers are collections of Entities. Supports indexing and slicing.
 
 """
 
+import logging
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 from .box import Box
@@ -63,6 +64,11 @@ class Layer:
         return cls(entities=[Entity.from_json(entity_json) for entity_json in layer_json])
 
     def find(self, query: Union[Span, Box]) -> List[Entity]:
+        logger = logging.getLogger(__name__)
+        logger.warning(
+            "This method is deprecated due to ambiguity and will be removed in a future release."
+            "Please use Layer.intersect_by_span or Layer.intersect_by_box instead."
+        )
         if isinstance(query, Span):
             return self.intersect_by_span(query=Entity(spans=[query]))
         elif isinstance(query, Box):
