@@ -94,7 +94,13 @@ class Entity:
     def __getattr__(self, name: str) -> List["Entity"]:
         """This Overloading is convenient syntax since the `entity.layer` operation is intuitive for folks."""
         try:
-            return self.intersect_by_span(name=name)
+            if len(self.spans) > 0:
+                intersection = self.intersect_by_span(name=name)
+                if len(intersection) == 0 and len(self.boxes) > 0:
+                    intersection = self.intersect_by_box(name=name)
+                return intersection
+            else:
+                return self.intersect_by_box(name=name)
         except ValueError:
             # maybe users just want some attribute of the Entity object
             return self.__getattribute__(name)
