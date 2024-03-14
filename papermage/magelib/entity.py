@@ -10,10 +10,10 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Union
 from .box import Box
 from .image import Image
 from .metadata import Metadata
+from .names import TokensFieldName
 from .span import Span
 
 if TYPE_CHECKING:
-    from .document import TokensFieldName
     from .layer import Layer
 
 
@@ -160,8 +160,7 @@ class Entity:
         if self.layer.doc.symbols is None:
             raise ValueError("This Entity's Document is missing symbols")
 
-        # TODO: maybe just an import error for TokensFieldName?
-        matched_tokens = self.intersect_by_box(name="tokens")
+        matched_tokens = self.intersect_by_box(name=TokensFieldName)
         return [self.layer.doc.symbols[span.start : span.end] for t in matched_tokens for span in t.spans]
 
     @property
