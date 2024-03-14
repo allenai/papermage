@@ -171,10 +171,10 @@ class Entity:
             return maybe_text
         # return derived from symbols
         if self.symbols_from_spans:
-            return " ".join(self.symbols_from_spans)
+            return " ".join(self.symbols_from_spans).replace("\n", " ")
         # return derived from boxes and tokens
         if self.symbols_from_boxes:
-            return " ".join(self.symbols_from_boxes)
+            return " ".join(self.symbols_from_boxes).replace("\n", " ")
         return ""
 
     @text.setter
