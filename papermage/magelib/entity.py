@@ -97,7 +97,7 @@ class Entity:
         # add method deprecation warning
         logger = logging.getLogger(__name__)
         logger.warning(
-            "Entity.layer is deprecated due to ambiguity and will be removed in a future release."
+            "Entity.__getattr__ is deprecated due to ambiguity and will be removed in a future release."
             "Please use Entity.intersect_by_span or Entity.intersect_by_box instead."
         )
         try:
