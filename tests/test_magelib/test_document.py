@@ -150,6 +150,33 @@ class TestDocument(unittest.TestCase):
         self.assertListEqual(doc.intersect_by_box(query=doc.tokens[4], name="chunks"), [chunks[1]])
         self.assertListEqual(doc.intersect_by_box(query=doc.tokens[5], name="chunks"), [chunks[1]])
 
+    def test_cross_referencing_with_no_spans(self):
+        doc = Document("This is a test document!")
+        # boxes are in a top-left to bottom-right diagonal fashion (same page)
+        tokens = [
+            Entity.from_json({"spans": [[0, 4]], "boxes": [[0, 0, 0.5, 0.5, 0]]}),
+            Entity.from_json({"spans": [[5, 7]], "boxes": [[1, 1, 0.5, 0.5, 0]]}),
+            Entity.from_json({"spans": [[8, 9]], "boxes": [[2, 2, 0.5, 0.5, 0]]}),
+            Entity.from_json({"spans": [[10, 14]], "boxes": [[3, 3, 0.5, 0.5, 0]]}),
+            Entity.from_json({"spans": [[15, 23]], "boxes": [[4, 4, 0.5, 0.5, 0]]}),
+            Entity.from_json({"spans": [[23, 24]], "boxes": [[5, 5, 0.5, 0.5, 0]]}),
+        ]
+        # chunks have no spans
+        chunks = [
+            Entity.from_json({"boxes": [[0, 0, 2.01, 2.01, 0]]}),
+            Entity.from_json({"boxes": [[3.0, 3.0, 4.0, 4.0, 0]]}),
+            Entity.from_json({"boxes": [[0, 0, 10.0, 10.0, 1]]}),
+        ]
+        doc.annotate_layer(name="tokens", entities=tokens)
+        doc.annotate_layer(name="chunks", entities=chunks)
+
+        # getattr() should still work when no spans; defers to boxes
+        self.assertListEqual(doc.chunks[0].tokens, tokens[:3])
+        self.assertListEqual(doc.chunks[1].tokens, tokens[3:])
+
+        # last chunk is on a different page; intersects nothing
+        self.assertListEqual(doc.chunks[2].tokens, [])
+
     def test_cross_referencing_with_missing_entity_fields(self):
         """What happens when annotate a Doc with entiites missing spans or boxes?
         How does the cross-referencing operation behave?"""

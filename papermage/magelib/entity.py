@@ -101,7 +101,13 @@ class Entity:
             "Please use Entity.intersect_by_span or Entity.intersect_by_box instead."
         )
         try:
-            return self.intersect_by_span(name=name)
+            if len(self.spans) > 0:
+                intersection = self.intersect_by_span(name=name)
+                if len(intersection) == 0 and len(self.boxes) > 0:
+                    intersection = self.intersect_by_box(name=name)
+                return intersection
+            else:
+                return self.intersect_by_box(name=name)
         except ValueError:
             # maybe users just want some attribute of the Entity object
             return self.__getattribute__(name)
