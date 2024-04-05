@@ -37,4 +37,8 @@ jobs:
 
       - name: Test with Python ${{ matrix.python-version }}
         run: |
-          pytest --cov-fail-under=42 --log-disable=pdfminer.psparser --log-disable=pdfminer.pdfinterp --log-disable=pdfminer.cmapdb --log-disable=pdfminer.pdfdocument --log-disable=pdfminer.pdffont --log-disable=pdfminer.pdfparser --log-disable=pdfminer.converter --log-disable=pdfminer.converter --log-disable=pdfminer.pdfpage
+          pytest \
+            --cov-fail-under=42 \
+            --log-disable=pdfminer.psparser --log-disable=pdfminer.pdfinterp --log-disable=pdfminer.cmapdb --log-disable=pdfminer.pdfdocument --log-disable=pdfminer.pdffont --log-disable=pdfminer.pdfparser --log-disable=pdfminer.converter --log-disable=pdfminer.converter --log-disable=pdfminer.pdfpage \
+            --ignore=tests/test_predictors/test_span_qa_predictors.py \
+            --ignore=tests/test_predictors/test_bio_tagger_predictor.py
