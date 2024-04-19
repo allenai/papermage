@@ -25,7 +25,7 @@ class Entity:
         spans: Optional[List[Span]] = None,
         boxes: Optional[List[Box]] = None,
         images: Optional[List[Image]] = None,
-        metadata: Optional[Metadata] = None,
+        metadata: Optional[List[Metadata]] = None, #Should be a list of Metadata, right?
     ):
         if not spans and not boxes:
             raise ValueError(f"At least one of `spans` or `boxes` must be set.")
