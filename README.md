@@ -14,7 +14,7 @@ pip install -e '.[dev,predictors,visualizers]'
 
 If you're installing from PyPi:
 ```
-pip install 'papermage.[dev,predictors,visualizers]'
+pip install 'papermage[dev,predictors,visualizers]'
 ```
 
 (you may need to add/remove quotes depending on your command line shell).
