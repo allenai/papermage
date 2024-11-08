@@ -1,5 +1,7 @@
 # papermage
 
+⚠️ This project is a research prototype for EMNLP 2023. Due to other project priorities, we are unlikely to be addressing issues / maintaining this on a regular cadence. We are working on related scientific PDF parsing functionality under the [Dolma](https://github.com/allenai/dolma) project banner, so please keep an eye there for a new release on the horizon. Thanks!
+
 ### Setup
 
 ```python
